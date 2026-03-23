@@ -1,20 +1,30 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# UrbanVein
 
-# Run and deploy your AI Studio app
+UrbanVein is a premium, minimalist e-commerce platform designed to offer an immersive shopping experience. It features an advanced admin panel with a cyberpunk cohesive UI, robust authentication, seamless Framer Motion animations, and an emphasis on visual aesthetics.
 
-This contains everything you need to run your app locally.
+## Key Features
 
-View your app in AI Studio: https://ai.studio/apps/484512eb-ebee-4d2d-8c19-c5c125b06fb9
+- **Modern E-commerce Frontend**: Built with Next.js and Tailwind CSS for a high-performance, mobile-responsive user experience.
+- **Premium Aesthetics**: Clean design utilizing smooth, dynamic Framer Motion animations and thoughtful typography.
+- **Robust Admin Panel**: A distinctive, terminal-like dark thematic dashboard designed specifically for management, secured through authentication.
+- **Real-Time Data**: Fast, secure communication with backend services.
+- **SEO Optimized**: Follows best practices to ensure high visibility and accessible design properties.
 
-## Run Locally
+## Getting Started
 
-**Prerequisites:**  Node.js
+### Prerequisites
+- Node.js installed
 
+### Installation & Setup
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+2. Configure necessary environment variables in your `.env.local` file.
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+The application will be accessible at `http://localhost:3000`.
