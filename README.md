@@ -9,6 +9,7 @@ UrbanVein is a premium, minimalist e-commerce platform designed to offer an imme
 - **Robust Admin Panel**: A distinctive, terminal-like dark thematic dashboard designed specifically for management, secured through authentication.
 - **Real-Time Data**: Fast, secure communication with backend services.
 - **SEO Optimized**: Follows best practices to ensure high visibility and accessible design properties.
+- **User Profiles**: Comprehensive user dashboard displaying orders, personal info, and preferences.
 
 ## Getting Started
 
