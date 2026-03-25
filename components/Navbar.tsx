@@ -10,18 +10,14 @@ export default function Navbar() {
   const isCheckout = pathname === '/checkout';
   const { cartCount, openSidebar } = useCart();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setIsProfileOpen(false);
-      }
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsSearchFocused(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -29,63 +25,30 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="flex flex-wrap items-center justify-between px-5 md:px-8 py-4 md:py-6 bg-zinc-950 border-b border-zinc-900 sticky top-0 z-50 backdrop-blur-md bg-zinc-950/80">
-      
-      {/* 1. Logo */}
-      <div className="flex items-center gap-1 order-1">
+    <nav className="flex items-center justify-between px-8 py-6 bg-zinc-950 border-b border-zinc-900 sticky top-0 z-50 backdrop-blur-md bg-zinc-950/80">
+      <div className="flex items-center gap-1">
         <Link href="/" className="flex items-center">
           <img 
             src="/products/Urban Vein logo.png" 
             alt="UrbanVein Logo" 
-            className="h-7 md:h-8 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+            className="h-8 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
           />
         </Link>
       </div>
 
       {!isCheckout ? (
         <>
-          {/* 2. Links (Desktop) */}
-          <div className="hidden lg:flex items-center gap-8 order-2 mx-8">
+          <div className="hidden lg:flex items-center gap-10">
             <Link href="/#shop" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-white transition-colors">Shop</Link>
             <Link href="/customizer" className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${pathname === '/customizer' ? 'text-red-600' : 'text-zinc-400 hover:text-white'}`}>Customizer</Link>
             <Link href="/lookbook" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-white transition-colors">Lookbook</Link>
             <Link href="/help" className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${pathname === '/help' ? 'text-red-600' : 'text-zinc-400 hover:text-white'}`}>Support</Link>
           </div>
 
-          {/* 3. Search Bar (Flipkart Style) */}
-          <div className="w-full lg:w-auto flex-1 order-last lg:order-3 relative mt-4 lg:mt-0 max-w-none lg:max-w-md xl:max-w-xl" ref={searchRef}>
-            <div className={`flex items-center bg-[#111111] hover:bg-[#151515] border ${isSearchFocused ? 'border-red-600' : 'border-zinc-800'} rounded-xl px-4 py-2.5 transition-colors group`}>
-              <Search size={18} className={`mr-3 transition-colors ${isSearchFocused ? 'text-red-600' : 'text-zinc-500 group-hover:text-zinc-400'}`} />
-              <input 
-                type="text" 
-                placeholder="Search for products, brands and more" 
-                className="bg-transparent border-none outline-none text-white text-sm font-medium tracking-wide w-full placeholder:text-zinc-500"
-                onFocus={() => setIsSearchFocused(true)}
-              />
-            </div>
-            
-            <AnimatePresence>
-              {isSearchFocused && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-zinc-950/95 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-2xl p-4 z-50 overflow-hidden"
-                >
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3 ml-2">Popular Discoveries</p>
-                  <div className="flex flex-col gap-1">
-                     <div className="text-sm font-semibold text-zinc-300 hover:text-white cursor-pointer px-3 py-2.5 hover:bg-zinc-800/80 rounded-lg transition-colors flex items-center gap-3"><Search size={14} className="text-zinc-500"/> Heavyweight Hoodies</div>
-                     <div className="text-sm font-semibold text-zinc-300 hover:text-white cursor-pointer px-3 py-2.5 hover:bg-zinc-800/80 rounded-lg transition-colors flex items-center gap-3"><Search size={14} className="text-zinc-500"/> Graphic Tees</div>
-                     <div className="text-sm font-semibold text-zinc-300 hover:text-white cursor-pointer px-3 py-2.5 hover:bg-zinc-800/80 rounded-lg transition-colors flex items-center gap-3"><Search size={14} className="text-zinc-500"/> V.001 Drop</div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* 4. Icons */}
-          <div className="flex items-center gap-4 md:gap-6 order-3 lg:order-4 lg:ml-8">
+          <div className="flex items-center gap-6">
+            <button onClick={() => setIsSearchOpen(true)} className="text-zinc-400 hover:text-white transition-colors">
+              <Search size={20} />
+            </button>
             <button onClick={openSidebar} className="relative text-zinc-400 hover:text-white transition-colors bg-zinc-900 p-2.5 rounded-xl border border-zinc-800 group">
               <ShoppingBag size={18} />
               <AnimatePresence mode="popLayout">
@@ -182,11 +145,62 @@ export default function Navbar() {
           </AnimatePresence>
         </>
       ) : (
-        <div className="flex items-center gap-3 text-zinc-400 bg-zinc-900/50 px-4 py-2 rounded-xl border border-zinc-800 order-2">
+        <div className="flex items-center gap-3 text-zinc-400 bg-zinc-900/50 px-4 py-2 rounded-xl border border-zinc-800">
           <Lock size={14} className="text-red-600" />
           <span className="text-[10px] font-black uppercase tracking-[0.2em]">Secure Checkout</span>
         </div>
       )}
+
+      {/* New Modal Layer Search */}
+      <AnimatePresence>
+        {isSearchOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] bg-zinc-950/80 backdrop-blur-md flex justify-center items-start pt-24 px-4"
+            onClick={(e) => {
+               if (e.target === e.currentTarget) setIsSearchOpen(false);
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              transition={{ duration: 0.2, delay: 0.05 }}
+              className="w-full max-w-2xl"
+            >
+              <div className="flex flex-col gap-2 relative z-50">
+                <div className="flex items-center bg-[#111111] border border-red-600 rounded-2xl px-5 py-4 shadow-[0_0_40px_rgba(220,38,38,0.15)] group">
+                  <Search size={22} className="mr-4 text-red-600" />
+                  <input 
+                    autoFocus
+                    type="text" 
+                    placeholder="Search for products, brands and more" 
+                    className="bg-transparent border-none outline-none text-white text-lg md:text-xl font-medium tracking-wide w-full placeholder:text-zinc-500"
+                  />
+                  <button 
+                    onClick={() => setIsSearchOpen(false)}
+                    className="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-white transition-colors ml-3"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="bg-[#111111]/95 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-2xl p-5 w-full">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 px-2">Popular Discoveries</p>
+                  <div className="flex flex-col gap-1.5">
+                     <div onClick={() => setIsSearchOpen(false)} className="text-sm font-semibold text-zinc-300 hover:text-white cursor-pointer px-4 py-3 hover:bg-zinc-800/80 rounded-xl transition-colors flex items-center gap-3"><Search size={16} className="text-zinc-500"/> Heavyweight Hoodies</div>
+                     <div onClick={() => setIsSearchOpen(false)} className="text-sm font-semibold text-zinc-300 hover:text-white cursor-pointer px-4 py-3 hover:bg-zinc-800/80 rounded-xl transition-colors flex items-center gap-3"><Search size={16} className="text-zinc-500"/> Graphic Tees</div>
+                     <div onClick={() => setIsSearchOpen(false)} className="text-sm font-semibold text-zinc-300 hover:text-white cursor-pointer px-4 py-3 hover:bg-zinc-800/80 rounded-xl transition-colors flex items-center gap-3"><Search size={16} className="text-zinc-500"/> V.001 Drop</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }
