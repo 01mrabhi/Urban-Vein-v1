@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingBag, User, Search, Menu, Lock, Sparkles } from 'lucide-react';
+import { ShoppingBag, User, Search, Menu, Lock, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
@@ -10,6 +10,8 @@ export default function Navbar() {
   const isCheckout = pathname === '/checkout';
   const { cartCount, openSidebar } = useCart();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-6">
-            <button className="text-zinc-400 hover:text-white transition-colors">
+            <button onClick={() => setIsSearchOpen(true)} className="text-zinc-400 hover:text-white transition-colors">
               <Search size={20} />
             </button>
             <button onClick={openSidebar} className="relative text-zinc-400 hover:text-white transition-colors bg-zinc-900 p-2.5 rounded-xl border border-zinc-800 group">
@@ -103,7 +105,7 @@ export default function Navbar() {
                 )}
               </AnimatePresence>
             </div>
-            <button className="md:hidden text-zinc-400 hover:text-white">
+            <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-zinc-400 hover:text-white transition-colors">
               <Menu size={20} />
             </button>
           </div>
@@ -114,6 +116,76 @@ export default function Navbar() {
           <span className="text-[10px] font-black uppercase tracking-[0.2em]">Secure Checkout</span>
         </div>
       )}
+
+      {/* Search Modal */}
+      <AnimatePresence>
+        {isSearchOpen && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] bg-zinc-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-6"
+          >
+            <button 
+              onClick={() => setIsSearchOpen(false)}
+              className="absolute top-10 right-10 text-zinc-500 hover:text-white hover:rotate-90 transition-all p-2 bg-zinc-900 rounded-full"
+            >
+              <X size={24} />
+            </button>
+            <div className="w-full max-w-4xl relative">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-500" size={32} />
+              <input 
+                autoFocus
+                type="text" 
+                placeholder="SEARCH ARCHIVE..." 
+                className="w-full bg-zinc-900/50 border border-zinc-800 text-white text-3xl md:text-5xl font-black uppercase tracking-widest pl-20 pr-6 py-8 rounded-3xl focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all placeholder:text-zinc-800 shadow-[0_0_50px_rgba(220,38,38,0.05)]" 
+              />
+              <div className="mt-6 flex flex-wrap gap-4 items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                <span>Popular:</span>
+                <span className="cursor-pointer hover:text-white transition-colors">Heavyweight Hoodies</span>
+                <span className="cursor-pointer hover:text-white transition-colors">Graphic Tees</span>
+                <span className="cursor-pointer hover:text-white transition-colors">V.001 Drop</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0, x: '100%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-[100] bg-zinc-950 flex flex-col pt-24 px-8 pb-12 overflow-y-auto"
+          >
+            <button 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="absolute top-8 right-8 text-zinc-500 hover:text-white p-2 rounded-full border border-zinc-800 hover:bg-zinc-900 transition-all"
+            >
+              <X size={24} />
+            </button>
+            
+            <nav className="flex flex-col gap-6 flex-1 mt-10">
+              <Link onClick={() => setIsMobileMenuOpen(false)} href="/#shop" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Shop</Link>
+              <Link onClick={() => setIsMobileMenuOpen(false)} href="/customizer" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Customizer</Link>
+              <Link onClick={() => setIsMobileMenuOpen(false)} href="/lookbook" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Lookbook</Link>
+              <Link onClick={() => setIsMobileMenuOpen(false)} href="/profile" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Profile</Link>
+              <Link onClick={() => setIsMobileMenuOpen(false)} href="/help" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Support</Link>
+            </nav>
+            
+            <div className="mt-12 flex flex-col gap-4 border-t border-zinc-900 pt-8">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-red-600">UrbanVein System v2.0</p>
+              <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest leading-relaxed">
+                Architecting the future of street aesthetics. High-grade fabrics. Zero Compromise.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }
