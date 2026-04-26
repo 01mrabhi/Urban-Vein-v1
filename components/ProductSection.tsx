@@ -1,17 +1,45 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { motion } from 'motion/react';
-import { PRODUCTS, CATEGORIES, Product } from '../lib/data';
+import { CATEGORIES, Product } from '../lib/data';
 import { useRouter } from 'next/navigation';
+import { supabase } from '../lib/supabase';
 
 export default function ProductSection() {
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching products:', error);
+      } else if (data) {
+        // Map database fields to Product type
+        const formattedProducts = data.map(p => ({
+          ...p,
+          id: p.original_id // map original_id to id for backwards compatibility with frontend
+        }));
+        setProducts(formattedProducts);
+      }
+      setIsLoading(false);
+    };
+
+    fetchProducts();
+  }, []);
 
   const handleNavigateToProduct = (product: Product) => {
     router.push(`/products/${product.id}`);
   };
+
+  const filteredProducts = products.filter(p => p.category === activeCategory);
 
   return (
     <section id="shop" className="py-24 px-8 bg-zinc-950">
@@ -47,15 +75,21 @@ export default function ProductSection() {
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
-          {PRODUCTS.map((product) => (
-            <ProductCard 
-              key={product.id} 
-              {...product} 
-              onClick={() => handleNavigateToProduct(product)}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+             <span className="w-8 h-8 rounded-full border-4 border-zinc-800 border-t-red-600 animate-spin"></span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
+            {filteredProducts.map((product) => (
+              <ProductCard 
+                key={product.id} 
+                {...product} 
+                onClick={() => handleNavigateToProduct(product)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

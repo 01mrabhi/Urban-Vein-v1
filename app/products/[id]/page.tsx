@@ -1,14 +1,15 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
-import { PRODUCTS } from '../../../lib/data';
+import { Product } from '../../../lib/data';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Plus, Minus, Heart, Shield, Package, RefreshCw, ChevronDown, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '../../../context/CartContext';
 import { useToast } from '../../../context/ToastContext';
 import { useParams, useRouter } from 'next/navigation';
+import { supabase } from '../../../lib/supabase';
 
 const SIZES = ['M', 'L', 'XL', 'XXL'];
 
@@ -16,7 +17,8 @@ export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const product = PRODUCTS.find(p => p.id === id);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const { addToCart } = useCart();
   const { showToast } = useToast();
@@ -24,6 +26,38 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState('L');
   const [quantity, setQuantity] = useState(1);
   const [activeAccordion, setActiveAccordion] = useState<string | null>('details');
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('original_id', id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching product:', error);
+      } else if (data) {
+        setProduct({
+          ...data,
+          id: data.original_id
+        });
+      }
+      setIsLoading(false);
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center selection:bg-red-600/30">
+        <span className="w-8 h-8 rounded-full border-4 border-zinc-800 border-t-red-600 animate-spin mb-4"></span>
+        <p className="text-zinc-500 font-bold uppercase tracking-widest text-sm">Loading Product...</p>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
