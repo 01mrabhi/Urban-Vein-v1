@@ -1,4 +1,3 @@
-'use client';
 import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { motion } from 'motion/react';
@@ -7,14 +6,14 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabase';
 
 export default function ProductSection() {
-  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoading(true);
+    async function fetchProducts() {
+      setLoading(true);
       const { data, error } = await supabase
         .from('products')
         .select('*');
@@ -22,15 +21,16 @@ export default function ProductSection() {
       if (error) {
         console.error('Error fetching products:', error);
       } else if (data) {
-        // Map database fields to Product type
-        const formattedProducts = data.map(p => ({
+        // Map original_id to id for compatibility with existing code
+        const mappedProducts: Product[] = data.map(p => ({
           ...p,
-          id: p.original_id // map original_id to id for backwards compatibility with frontend
+          id: p.original_id,
+          actionType: p.action_type
         }));
-        setProducts(formattedProducts);
+        setProducts(mappedProducts);
       }
-      setIsLoading(false);
-    };
+      setLoading(false);
+    }
 
     fetchProducts();
   }, []);
@@ -75,21 +75,21 @@ export default function ProductSection() {
         </div>
 
         {/* Product Grid */}
-        {isLoading ? (
-          <div className="flex justify-center py-20">
-             <span className="w-8 h-8 rounded-full border-4 border-zinc-800 border-t-red-600 animate-spin"></span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
-            {filteredProducts.map((product) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
+          {loading ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="animate-pulse bg-zinc-900 aspect-[4/5] rounded-[2.5rem]"></div>
+            ))
+          ) : (
+            filteredProducts.map((product) => (
               <ProductCard 
                 key={product.id} 
                 {...product} 
                 onClick={() => handleNavigateToProduct(product)}
               />
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </div>
     </section>
   );

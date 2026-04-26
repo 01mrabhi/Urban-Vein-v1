@@ -1,8 +1,7 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
-import { Product } from '../../../lib/data';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Plus, Minus, Heart, Shield, Package, RefreshCw, ChevronDown, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
@@ -17,8 +16,8 @@ export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const [product, setProduct] = useState<Product | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   const { addToCart } = useCart();
   const { showToast } = useToast();
@@ -28,8 +27,8 @@ export default function ProductDetailPage() {
   const [activeAccordion, setActiveAccordion] = useState<string | null>('details');
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      setIsLoading(true);
+    async function fetchProduct() {
+      setLoading(true);
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -41,20 +40,21 @@ export default function ProductDetailPage() {
       } else if (data) {
         setProduct({
           ...data,
-          id: data.original_id
+          id: data.original_id,
+          actionType: data.action_type
         });
       }
-      setIsLoading(false);
-    };
+      setLoading(false);
+    }
 
     fetchProduct();
   }, [id]);
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center selection:bg-red-600/30">
-        <span className="w-8 h-8 rounded-full border-4 border-zinc-800 border-t-red-600 animate-spin mb-4"></span>
-        <p className="text-zinc-500 font-bold uppercase tracking-widest text-sm">Loading Product...</p>
+      <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500">Decrypting System Data...</p>
       </div>
     );
   }

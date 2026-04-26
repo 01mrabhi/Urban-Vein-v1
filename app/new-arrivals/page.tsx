@@ -8,67 +8,63 @@ import { useRouter } from 'next/navigation';
 
 export default function NewArrivalsPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoading(true);
+    async function fetchNewArrivals() {
+      setLoading(true);
+      // For now, we'll fetch all products as "New Arrivals"
       const { data, error } = await supabase
         .from('products')
-        .select('*');
+        .select('*')
+        .limit(4);
       
       if (error) {
-        console.error('Error fetching products:', error);
+        console.error('Error fetching new arrivals:', error);
       } else if (data) {
-        // Map original_id to id for frontend compatibility
-        const mappedProducts = data.map(p => ({
+        const mappedProducts: Product[] = data.map(p => ({
           ...p,
-          id: p.original_id
+          id: p.original_id,
+          actionType: p.action_type
         }));
-        // We'll show specific products for New Arrivals or just slice the newest
-        // For now, let's just reverse and show top 4 as new arrivals
-        setProducts(mappedProducts.reverse().slice(0, 4));
+        setProducts(mappedProducts);
       }
-      setIsLoading(false);
-    };
+      setLoading(false);
+    }
 
-    fetchProducts();
+    fetchNewArrivals();
   }, []);
 
+  const handleNavigateToProduct = (product: Product) => {
+    router.push(`/products/${product.id}`);
+  };
+
   return (
-    <main className="min-h-screen bg-zinc-950 text-white selection:bg-red-600/30">
+    <main className="min-h-screen bg-zinc-950 text-white">
       <Navbar />
-      <section className="p-6 max-w-[1600px] mx-auto pt-24 pb-32">
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
-            <span className="text-[10px] font-black text-red-600 uppercase tracking-[0.4em]">Latest Drop</span>
-          </div>
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tighter leading-[0.9] italic">New Arrivals</h1>
+      <section className="p-6 md:p-12 lg:p-24 max-w-7xl mx-auto">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-12 h-px bg-red-600"></div>
+          <span className="text-[10px] font-black uppercase tracking-[0.4em] text-red-600">Fresh System Drop</span>
         </div>
+        <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-none mb-12 italic">New <span className="text-red-600">Arrivals</span></h1>
         
-        {isLoading ? (
-           <div className="flex justify-center items-center h-64">
-             <span className="w-8 h-8 rounded-full border-4 border-zinc-800 border-t-red-600 animate-spin"></span>
-           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {products.map(product => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-16">
+          {loading ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="animate-pulse bg-zinc-900 aspect-[4/5] rounded-[2.5rem]"></div>
+            ))
+          ) : (
+            products.map((product) => (
               <ProductCard 
-                key={product.id}
-                id={product.id}
-                name={product.name} 
-                price={product.price} 
-                image={product.image} 
-                description={product.description}
-                badge={product.badge}
-                actionType={product.actionType as 'quick-add' | 'waitlist' | undefined}
-                onClick={() => router.push(`/products/${product.id}`)}
+                key={product.id} 
+                {...product} 
+                onClick={() => handleNavigateToProduct(product)}
               />
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </section>
     </main>
   );
