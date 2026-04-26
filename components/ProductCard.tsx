@@ -16,7 +16,6 @@ interface ProductCardProps {
   onClick?: () => void;
 }
 
-import { ImageWithSkeleton } from './Skeleton';
 
 export default function ProductCard({ 
   name, 
@@ -54,11 +53,10 @@ export default function ProductCard({
         </button>
 
         {/* Product Image */}
-        <ImageWithSkeleton 
+        <img 
           src={image} 
           alt={name} 
-          className="w-full h-full"
-          imageClassName="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
         />
 
         {/* Action Button */}

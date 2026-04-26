@@ -33,13 +33,18 @@ export function ImageWithSkeleton({ src, alt, className, imageClassName }: {
   const [isLoaded, setIsLoaded] = React.useState(false);
 
   return (
-    <div className={`relative ${className}`}>
-      {!isLoaded && <Skeleton className="absolute inset-0 w-full h-full z-10" />}
+    <div className={`relative overflow-hidden ${className}`}>
+      {!isLoaded && (
+        <div className="absolute inset-0 z-10">
+          <Skeleton className="w-full h-full" />
+        </div>
+      )}
       <img
         src={src}
         alt={alt}
         onLoad={() => setIsLoaded(true)}
-        className={`${imageClassName} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
+        className={`${imageClassName} transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+        onError={() => setIsLoaded(true)} // Show what we have if error
       />
     </div>
   );

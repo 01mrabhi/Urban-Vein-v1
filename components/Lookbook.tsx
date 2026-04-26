@@ -25,7 +25,6 @@ const LOOKS = [
   }
 ];
 
-import { ImageWithSkeleton } from './Skeleton';
 
 export default function Lookbook() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -63,11 +62,10 @@ export default function Lookbook() {
                 style={{ y: idx % 2 === 0 ? y1 : y2 }}
                 className="relative w-full md:w-2/3 aspect-[3/4] rounded-[4rem] overflow-hidden group cursor-crosshair border border-zinc-900"
               >
-                <ImageWithSkeleton 
+                <img 
                   src={look.image} 
                   alt={look.title} 
-                  className="w-full h-full"
-                  imageClassName="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000 scale-105 group-hover:scale-100" 
+                  className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000 scale-105 group-hover:scale-100" 
                 />
                 
                 {/* Hotspots */}

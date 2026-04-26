@@ -37,15 +37,15 @@ export default function Navbar() {
         </Link>
       </div>
 
-      {/* Center Section: Navigation Links */}
+      {/* Center Section: Navigation Links - Perfectly Centered */}
       {!isCheckout ? (
-        <div className="hidden lg:flex items-center justify-center gap-10">
-          <Link href="/#shop" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-white transition-colors">Shop</Link>
-          <Link href="/help" className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${pathname === '/help' ? 'text-red-600' : 'text-zinc-400 hover:text-white'}`}>Support</Link>
-          <Link href="/lookbook" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-white transition-colors">Lookbook</Link>
+        <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-12">
+          <Link href="/#shop" className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-white transition-all hover:scale-110">Shop</Link>
+          <Link href="/help" className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all hover:scale-110 ${pathname === '/help' ? 'text-red-600' : 'text-zinc-400 hover:text-white'}`}>Support</Link>
+          <Link href="/lookbook" className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-white transition-all hover:scale-110">Lookbook</Link>
         </div>
       ) : (
-        <div className="flex items-center justify-center gap-3 text-zinc-400 bg-zinc-900/50 px-4 py-2 rounded-xl border border-zinc-800">
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 text-zinc-400 bg-zinc-900/50 px-4 py-2 rounded-xl border border-zinc-800">
           <Lock size={14} className="text-red-600" />
           <span className="text-[10px] font-black uppercase tracking-[0.2em]">Secure Checkout</span>
         </div>
