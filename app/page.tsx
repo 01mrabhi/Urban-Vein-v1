@@ -43,13 +43,14 @@ export default function Home() {
           <p className="text-lg md:text-xl text-zinc-500 mb-14 max-w-xl font-bold uppercase tracking-[0.2em] italic leading-relaxed">
             Architecting the future of street aesthetics. High-grade fabrics. <span className="text-white">Zero Compromise.</span>
           </p>
-          <motion.button
+          <motion.a
+            href="#shop"
             whileHover={{ scale: 1.05, rotateX: 5, boxShadow: '0 20px 80px rgba(220,38,38,0.4)' }}
             whileTap={{ scale: 0.95 }}
             className="flex items-center gap-6 bg-red-600 text-white px-16 py-7 rounded-[2rem] font-black uppercase tracking-[0.3em] text-[10px] hover:bg-red-500 transition-all shadow-[0_20px_60px_rgba(220,38,38,0.3)] group"
           >
-            Enter Customizer <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
-          </motion.button>
+            Explore Collection <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
+          </motion.a>
         </motion.div>
 
         {/* Scroll Indicator */}

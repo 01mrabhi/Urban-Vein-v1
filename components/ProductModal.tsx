@@ -31,13 +31,13 @@ const COLORS = [
   { id: 'blue', name: 'CORE BLUE', value: '#4A5568' },
 ];
 
-const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
+const SIZES = ['M', 'L', 'XL', 'XXL'];
 
 const RECOMMENDED = [
-  { id: 'r1', name: 'PHANTOM HOODIE', price: '$145.00', image: '/products/hoodi1-min.jpg' },
-  { id: 'r2', name: 'LAVA TECH HOODIE', price: '$155.00', image: '/products/hoodi2-min.jpg' },
-  { id: 'r3', name: 'CORE BLUE HOODIE', price: '/products/hoodi3-min.jpg' },
-  { id: 'r4', name: 'URBAN SHIELD', price: '$180.00', image: '/products/hoodie4-min.jpg' },
+  { id: 'r1', name: 'PHANTOM HOODIE', price: '₹2,999.00', image: '/products/hoodi1-min.jpg' },
+  { id: 'r2', name: 'LAVA TECH HOODIE', price: '₹3,299.00', image: '/products/hoodi2-min.jpg' },
+  { id: 'r3', name: 'CORE BLUE HOODIE', price: '₹2,799.00', image: '/products/hoodi3-min.jpg' },
+  { id: 'r4', name: 'URBAN SHIELD', price: '₹3,999.00', image: '/products/hoodie4-min.jpg' },
 ];
 
 import { useToast } from '../context/ToastContext';

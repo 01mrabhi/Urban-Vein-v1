@@ -119,12 +119,12 @@ export default function CheckoutPage() {
               {/* Product Preview */}
               <div className="flex items-center gap-8 mb-10 p-6 rounded-3xl bg-zinc-950/50 border border-zinc-900">
                 <div className="w-24 h-24 rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800">
-                  <img src="https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=200&auto=format&fit=crop" alt="Cyber Hoodie" className="w-full h-full object-cover" />
+                  <img src="/products/hoodi1-min.jpg" alt="Cyber Hoodie" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black uppercase tracking-widest mb-1">Cyber-Vein Custom Hoodie</h3>
+                  <h3 className="text-sm font-black uppercase tracking-widest mb-1">Cyber-Vein Hoodie</h3>
                   <p className="text-[10px] text-red-600 font-bold uppercase tracking-widest mb-2">Limited Edition • Jet Black</p>
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Size: XL / Design: Custom Logo</p>
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Size: L / Color: Phantom Black</p>
                 </div>
               </div>
 
@@ -132,26 +132,22 @@ export default function CheckoutPage() {
               <div className="space-y-6 mb-10 pt-6 border-t border-zinc-900">
                 <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-zinc-400">
                   <span>Subtotal</span>
-                  <span className="text-white">$78.00</span>
+                  <span className="text-white">₹2,999.00</span>
                 </div>
                 <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-zinc-400">
-                  <span>Digital Customization</span>
-                  <span className="text-white">$12.00</span>
+                  <span>Shipping (Express)</span>
+                  <span className="text-white">₹69.00</span>
                 </div>
                 <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-zinc-400">
-                  <span>Shipping (Global Express)</span>
-                  <span className="text-white">$5.00</span>
-                </div>
-                <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-zinc-400">
-                   <span>Estimated Taxes</span>
-                   <span className="text-white">$6.40</span>
+                   <span>Taxes</span>
+                   <span className="text-white">₹0.00</span>
                 </div>
               </div>
 
               {/* Total */}
               <div className="flex items-end justify-between mb-10">
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600 mb-2">Total Amount</span>
-                <span className="text-5xl lg:text-6xl font-black tracking-tighter text-red-600">$101.40</span>
+                <span className="text-5xl lg:text-6xl font-black tracking-tighter text-red-600">₹3,068.00</span>
               </div>
 
               {/* Promo Code */}

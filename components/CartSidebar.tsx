@@ -16,9 +16,30 @@ export default function CartSidebar() {
     cartCount 
   } = useCart();
 
-  const shipping = subtotal > 200 || subtotal === 0 ? 0 : 15.00;
-  const taxes = subtotal * 0.08; // Example 8% tax
-  const total = subtotal + shipping + taxes;
+  const shipping = subtotal === 0 ? 0 : 69.00;
+  const taxes = 0;
+  const total = subtotal + shipping;
+
+  const handleWhatsAppCheckout = () => {
+    const adminPhone = "918264966094"; 
+    let message = "NEW ORDER REQUEST\n\n";
+    items.forEach((item, index) => {
+      message += `${index + 1}. ${item.name}\n`;
+      message += `- Size: ${item.size}\n`;
+      message += `- Color: ${item.color}\n`;
+      message += `- Qty: ${item.quantity}\n`;
+      message += `- Price: INR ${item.price.toFixed(2)}\n\n`;
+    });
+    message += "ORDER SUMMARY\n";
+    message += `Subtotal: INR ${subtotal.toFixed(2)}\n`;
+    message += `Shipping: INR ${shipping.toFixed(2)}\n`;
+    message += `Total: INR ${total.toFixed(2)}\n\n`;
+    message += "Payment Request: Please share the payment details to confirm my order.";
+
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${adminPhone}?text=${encodedMessage}`, '_blank');
+    closeSidebar();
+  };
 
   return (
     <AnimatePresence>
@@ -103,7 +124,7 @@ export default function CartSidebar() {
                         </div>
                         
                         <p className="text-sm font-black text-red-500">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          ₹{(item.price * item.quantity).toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -126,29 +147,28 @@ export default function CartSidebar() {
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-xs font-black uppercase tracking-widest text-zinc-400">
                     <span>Subtotal</span>
-                    <span className="text-white">${subtotal.toFixed(2)}</span>
+                    <span className="text-white">₹{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-xs font-black uppercase tracking-widest text-zinc-400">
                     <span>Shipping (Express)</span>
-                    <span className="text-white">{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span>
+                    <span className="text-white">{shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`}</span>
                   </div>
                   <div className="flex justify-between text-xs font-black uppercase tracking-widest text-zinc-400">
                     <span>Taxes</span>
-                    <span className="text-white">${taxes.toFixed(2)}</span>
+                    <span className="text-white">₹{taxes.toFixed(2)}</span>
                   </div>
                   <div className="pt-3 flex justify-between items-center border-t border-zinc-800/50">
                     <span className="text-sm font-black uppercase tracking-widest text-white">Total</span>
-                    <span className="text-xl font-black text-red-500">${total.toFixed(2)}</span>
+                    <span className="text-xl font-black text-red-500">₹{total.toFixed(2)}</span>
                   </div>
                 </div>
 
-                <Link 
-                  href="/cart"
-                  onClick={closeSidebar}
-                  className="w-full bg-[#FF2B2B] hover:bg-red-500 text-white rounded-xl py-4 flex items-center justify-center gap-2 font-black uppercase tracking-[0.2em] text-xs transition-all active:scale-[0.98] group shadow-[0_0_20px_rgba(255,43,43,0.2)]"
+                <button 
+                  onClick={handleWhatsAppCheckout}
+                  className="w-full bg-green-600 hover:bg-green-500 text-white rounded-xl py-4 flex items-center justify-center gap-2 font-black uppercase tracking-[0.2em] text-xs transition-all active:scale-[0.98] group shadow-[0_0_20px_rgba(22,163,74,0.2)]"
                 >
-                  Checkout <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
+                  Order via WhatsApp <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                </button>
 
                 <p className="text-center text-[8px] font-black uppercase tracking-[0.2em] text-zinc-600 mt-4 italic">
                   Secure Checkout Powered by Urbanvein Core

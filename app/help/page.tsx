@@ -20,8 +20,8 @@ const ORDERS = [
   {
     id: '#UV-99210',
     date: 'May 14, 2024',
-    item: 'Custom Urban-Tee "VOID"',
-    price: '$45.00',
+    item: 'Urban Tee "VOID"',
+    price: '₹1,499.00',
     status: 'Shipped',
     image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=200&auto=format&fit=crop'
   },
@@ -29,7 +29,7 @@ const ORDERS = [
     id: '#UV-98442',
     date: 'May 10, 2024',
     item: 'Oversize Cargo Hoodie',
-    price: '$120.00',
+    price: '₹2,999.00',
     status: 'Processing',
     image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=200&auto=format&fit=crop'
   },
@@ -37,7 +37,7 @@ const ORDERS = [
     id: '#UV-97109',
     date: 'Apr 22, 2024',
     item: 'Vein Essential Pack (3x)',
-    price: '$85.00',
+    price: '₹2,499.00',
     status: 'Delivered',
     image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7ec28?q=80&w=200&auto=format&fit=crop'
   }
@@ -45,7 +45,7 @@ const ORDERS = [
 
 const QUICK_LINKS = [
   { icon: RefreshCcw, title: 'Return Policy', desc: '30-day hassle-free returns on all streetwear items.' },
-  { icon: Truck, title: 'Shipping Info', desc: 'Global expedited shipping with tracking IDs.' },
+  { icon: Truck, title: 'Shipping Info', desc: 'Flat ₹69 shipping across India with real-time tracking.' },
   { icon: Ruler, title: 'Size Guide', desc: 'Detailed dimensions for our techwear & oversize fits.' },
   { icon: HelpCircle, title: 'Contact Us', desc: '24/7 dedicated support for our global community.' }
 ];

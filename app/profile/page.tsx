@@ -12,8 +12,8 @@ const TABS = [
 ];
 
 const ORDERS = [
-  { id: 'ORD-2024-001', date: 'Oct 24, 2024', status: 'Delivered', total: '$145.00', items: 2 },
-  { id: 'ORD-2024-002', date: 'Nov 12, 2024', status: 'In Transit', total: '$89.00', items: 1 },
+  { id: 'ORD-2024-001', date: 'Oct 24, 2024', status: 'Delivered', total: '₹2,999.00', items: 2 },
+  { id: 'ORD-2024-002', date: 'Nov 12, 2024', status: 'In Transit', total: '₹1,499.00', items: 1 },
 ];
 
 export default function ProfilePage() {

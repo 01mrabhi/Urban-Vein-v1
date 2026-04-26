@@ -10,7 +10,7 @@ import { useCart } from '../../../context/CartContext';
 import { useToast } from '../../../context/ToastContext';
 import { useParams, useRouter } from 'next/navigation';
 
-const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
+const SIZES = ['M', 'L', 'XL', 'XXL'];
 
 export default function ProductDetailPage() {
   const params = useParams();

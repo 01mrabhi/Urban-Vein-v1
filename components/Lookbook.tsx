@@ -10,8 +10,8 @@ const LOOKS = [
     tag: 'Drop 01 // V.001',
     image: '/products/hoodi1-min.jpg',
     hotspots: [
-      { x: '45%', y: '30%', label: 'Heavyweight Hoodie', price: '$120' },
-      { x: '55%', y: '70%', label: 'Cargo Systems V2', price: '$145' }
+      { x: '45%', y: '30%', label: 'Heavyweight Hoodie', price: '₹2,499' },
+      { x: '55%', y: '70%', label: 'Cargo Systems V2', price: '₹2,999' }
     ]
   },
   {
@@ -20,7 +20,7 @@ const LOOKS = [
     tag: 'Drop 01 // V.002',
     image: '/products/Tshirt2-min.jpg',
     hotspots: [
-      { x: '50%', y: '40%', label: 'Distressed Core Tee', price: '$85' }
+      { x: '50%', y: '40%', label: 'Distressed Core Tee', price: '₹1,499' }
     ]
   }
 ];
