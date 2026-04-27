@@ -72,13 +72,13 @@ export default function ProductCard({
             <img 
               src={image_back} 
               alt={`${name} back`} 
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 opacity-0 group-hover:opacity-100" 
+              className="absolute inset-0 w-full h-full object-cover transition-all duration-700 lg:group-hover:scale-110 opacity-0 lg:group-hover:opacity-100" 
             />
           )}
           <img 
             src={image} 
             alt={name} 
-            className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${image_back ? 'group-hover:opacity-0' : ''} absolute inset-0`} 
+            className={`w-full h-full object-cover transition-all duration-700 lg:group-hover:scale-110 ${image_back ? 'lg:group-hover:opacity-0' : ''} absolute inset-0`} 
           />
         </div>
 

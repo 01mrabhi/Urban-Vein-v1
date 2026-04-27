@@ -134,7 +134,7 @@ export default function ProductDetailPage() {
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 src={currentImage || product.image} 
                 alt={product.name} 
-                className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000 group-hover:scale-105"
+                className="w-full h-full object-cover lg:grayscale lg:hover:grayscale-0 transition-all duration-1000 group-hover:scale-105"
               />
               
               {product.badge && (
@@ -151,13 +151,13 @@ export default function ProductDetailPage() {
               <div className="flex gap-4 px-2">
                 <button 
                   onClick={() => setCurrentImage(product.image)}
-                  className={`relative w-24 h-32 rounded-2xl overflow-hidden border-2 transition-all ${currentImage === product.image ? 'border-red-600' : 'border-zinc-800 hover:border-zinc-500'}`}
+                  className={`relative w-20 sm:w-24 h-28 sm:h-32 rounded-2xl overflow-hidden border-2 transition-all ${currentImage === product.image ? 'border-red-600' : 'border-zinc-800 hover:border-zinc-500'}`}
                 >
                   <img src={product.image} alt="Front view" className="w-full h-full object-cover" />
                 </button>
                 <button 
                   onClick={() => setCurrentImage(product.image_back)}
-                  className={`relative w-24 h-32 rounded-2xl overflow-hidden border-2 transition-all ${currentImage === product.image_back ? 'border-red-600' : 'border-zinc-800 hover:border-zinc-500'}`}
+                  className={`relative w-20 sm:w-24 h-28 sm:h-32 rounded-2xl overflow-hidden border-2 transition-all ${currentImage === product.image_back ? 'border-red-600' : 'border-zinc-800 hover:border-zinc-500'}`}
                 >
                   <img src={product.image_back} alt="Back view" className="w-full h-full object-cover" />
                 </button>
@@ -221,34 +221,34 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Quantity & Add to Cart */}
-              <div className="flex flex-col sm:flex-row gap-4 items-center">
-                <div className="flex items-center justify-between w-full sm:w-40 bg-zinc-900 border border-zinc-800 rounded-3xl p-2 h-16">
+              <div className="flex flex-col gap-6 items-center">
+                <div className="flex items-center justify-between w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-2 h-20 sm:h-16 max-w-md mx-auto sm:max-w-none">
                   <button 
                     onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                    className="w-12 h-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-2xl transition-all"
+                    className="w-16 sm:w-12 h-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-2xl transition-all"
                   >
-                    <Minus size={16} />
+                    <Minus size={20} className="sm:size-4" />
                   </button>
-                  <span className="font-black text-lg w-8 text-center">{quantity}</span>
+                  <span className="font-black text-xl sm:text-lg w-8 text-center">{quantity}</span>
                   <button 
                     onClick={() => setQuantity(q => q + 1)}
-                    className="w-12 h-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-2xl transition-all"
+                    className="w-16 sm:w-12 h-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-2xl transition-all"
                   >
-                    <Plus size={16} />
+                    <Plus size={20} className="sm:size-4" />
                   </button>
                 </div>
 
-                <div className="flex-1 w-full flex gap-4 h-16">
+                <div className="w-full flex gap-4 h-20 sm:h-16">
                   {product.actionType === 'waitlist' ? (
-                     <button className="flex-1 rounded-3xl font-black uppercase tracking-[0.2em] text-[12px] bg-transparent border-2 border-white text-white hover:bg-white hover:text-black transition-all">
+                     <button className="flex-1 rounded-3xl font-black uppercase tracking-[0.2em] text-[14px] sm:text-[12px] bg-transparent border-2 border-white text-white hover:bg-white hover:text-black transition-all">
                        Join Waitlist
                      </button>
                   ) : (
                     <button 
                       onClick={handleAddToCart}
-                      className="flex-1 rounded-3xl font-black uppercase tracking-[0.2em] text-[12px] bg-red-600 text-white hover:bg-red-500 shadow-[0_10px_40px_rgba(220,38,38,0.2)] hover:shadow-[0_10px_60px_rgba(220,38,38,0.4)] transition-all flex justify-center items-center gap-3 group"
+                      className="flex-1 rounded-3xl font-black uppercase tracking-[0.2em] text-[14px] sm:text-[12px] bg-red-600 text-white hover:bg-red-500 shadow-[0_10px_40px_rgba(220,38,38,0.2)] hover:shadow-[0_10px_60px_rgba(220,38,38,0.4)] transition-all flex justify-center items-center gap-3 group"
                     >
-                      <ShoppingBag size={18} className="group-hover:-translate-y-1 transition-transform" />
+                      <ShoppingBag size={22} className="sm:size-5 group-hover:-translate-y-1 transition-transform" />
                       Checkout Sequence
                     </button>
                   )}
@@ -258,9 +258,9 @@ export default function ProductDetailPage() {
                       toggleLike(product.id);
                       showToast(liked ? `Removed ${product.name} from Wishlist` : `Added ${product.name} to Wishlist`, 'success');
                     }}
-                    className={`w-16 flex items-center justify-center rounded-3xl transition-all ${liked ? 'bg-red-600 text-white border border-red-600' : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30'}`}
+                    className={`w-20 sm:w-16 flex items-center justify-center rounded-3xl transition-all ${liked ? 'bg-red-600 text-white border border-red-600' : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30'}`}
                   >
-                    <Heart size={20} fill={liked ? "currentColor" : "none"} />
+                    <Heart size={24} className="sm:size-5" fill={liked ? "currentColor" : "none"} />
                   </button>
                 </div>
               </div>
