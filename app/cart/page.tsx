@@ -11,10 +11,15 @@ import {
   ShieldCheck,
   Truck,
   RotateCcw,
-  ChevronRight
+  ChevronRight,
+  X,
+  MapPin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { supabase } from '../../lib/supabase';
+import LoginModal from '../../components/LoginModal';
 
 import { useCart } from '../../context/CartContext';
 
@@ -26,9 +31,39 @@ export default function CartPage() {
   const taxes = 0;
   const total = subtotal + shipping;
 
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [address, setAddress] = useState('');
+  const router = useRouter();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+  }, []);
+
   const handleWhatsAppCheckout = () => {
+    if (!user) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    setIsAddressModalOpen(true);
+  };
+
+  const confirmWhatsAppOrder = () => {
+    if (!address.trim()) {
+      alert("Please enter your shipping address.");
+      return;
+    }
+
     const adminPhone = "918264966094";
     let message = "NEW ORDER REQUEST\n\n";
+    message += `CUSTOMER INFO:\n`;
+    message += `   - Email: ${user.email}\n`;
+    message += `   - Shipping Address: ${address}\n\n`;
+    
+    message += "ITEMS:\n";
     items.forEach((item, index) => {
       message += `${index + 1}. ${item.name}\n`;
       message += `   - Size: ${item.size}\n`;
@@ -36,7 +71,8 @@ export default function CartPage() {
       message += `   - Qty: ${item.quantity}\n`;
       message += `   - Price: INR ${item.price.toFixed(2)}\n\n`;
     });
-    message += "ORDER SUMMARY\n";
+    
+    message += "ORDER SUMMARY:\n";
     message += `   Subtotal: INR ${subtotal.toFixed(2)}\n`;
     message += `   Shipping: INR ${shipping.toFixed(2)}\n`;
     message += `   Total: INR ${total.toFixed(2)}\n\n`;
@@ -44,6 +80,7 @@ export default function CartPage() {
 
     const encodedMessage = encodeURIComponent(message);
     window.open(`https://wa.me/${adminPhone}?text=${encodedMessage}`, '_blank');
+    setIsAddressModalOpen(false);
   };
 
   return (
@@ -151,7 +188,7 @@ export default function CartPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
                   {[
                     { icon: Truck, title: 'Global Logistics', desc: 'Secure transit with full telemetry tracking.' },
-                    { icon: RotateCcw, title: 'Seamless Returns', desc: '14-day return cycle for unaltered products.' },
+                    { icon: RotateCcw, title: 'No Returns', desc: 'No Return Policy. All sales are final.' },
                     { icon: ShieldCheck, title: 'Authenticity Lock', desc: 'Each drop contains encrypted identity tags.' },
                   ].map((feature, i) => (
                     <div key={i} className="bg-zinc-900/20 border border-zinc-900/50 p-6 rounded-[2rem] space-y-3">
@@ -257,7 +294,7 @@ export default function CartPage() {
                 href="/#shop"
                 className="bg-white text-black px-12 py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-zinc-200 transition-all"
               >
-                Start Exploring
+                Return to Archive
               </Link>
             </motion.div>
           )}
@@ -278,6 +315,64 @@ export default function CartPage() {
           border-radius: 10px;
         }
       `}</style>
+      {/* Address Pop-up Modal */}
+      <AnimatePresence>
+        {isAddressModalOpen && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddressModalOpen(false)}
+              className="absolute inset-0 bg-black/90 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-[2.5rem] p-10 shadow-2xl z-10"
+            >
+              <button 
+                onClick={() => setIsAddressModalOpen(false)}
+                className="absolute top-6 right-6 text-zinc-500 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="text-center mb-8">
+                <MapPin className="mx-auto text-red-600 mb-4" size={32} />
+                <h2 className="text-2xl font-black uppercase tracking-tight italic">Delivery <span className="text-red-600">Protocol</span></h2>
+                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Enter your destination coordinates</p>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black tracking-widest uppercase text-zinc-500">Shipping Address</label>
+                  <textarea
+                    autoFocus
+                    placeholder="ENTER FULL STREET ADDRESS, CITY, STATE, AND PIN CODE"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 text-white p-6 rounded-2xl text-xs focus:outline-none focus:border-red-600 transition-all placeholder:text-zinc-700 font-bold uppercase tracking-widest min-h-[150px] resize-none"
+                  />
+                </div>
+
+                <button 
+                  onClick={confirmWhatsAppOrder}
+                  className="w-full bg-red-600 hover:bg-red-500 text-white font-black tracking-[0.2em] uppercase text-xs py-5 rounded-2xl transition-all shadow-[0_10px_30px_rgba(220,38,38,0.2)] active:scale-[0.98] flex items-center justify-center gap-3"
+                >
+                  Confirm & Open WhatsApp <ArrowRight size={16} />
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <LoginModal 
+        isOpen={isLoginModalOpen} 
+        onClose={() => setIsLoginModalOpen(false)} 
+      />
     </main>
   );
 }

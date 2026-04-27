@@ -4,24 +4,19 @@ import { motion, useScroll, useTransform } from 'motion/react';
 import { ArrowUpRight, Sparkles, ShoppingBag, Plus } from 'lucide-react';
 
 const LOOKS = [
-  {
-    id: 'l1',
-    title: 'THE SHADOW ARCHIVE',
-    tag: 'Drop 01 // V.001',
-    image: '/products/hoodi1-min.jpg',
-    hotspots: [
-      { x: '45%', y: '30%', label: 'Heavyweight Hoodie', price: '₹2,499' },
-      { x: '55%', y: '70%', label: 'Cargo Systems V2', price: '₹2,999' }
-    ]
+  { 
+    id: 1, 
+    title: 'STREET CORE', 
+    tag: 'Drop 01 // Archive', 
+    image: '/products/lookbook1.jpg',
+    hotspots: [{ x: '45%', y: '35%', label: 'Heavyweight Fit', price: '₹3,499' }]
   },
-  {
-    id: 'l2',
-    title: 'NEURAL NOMAD',
-    tag: 'Drop 01 // V.002',
-    image: '/products/Tshirt2-min.jpg',
-    hotspots: [
-      { x: '50%', y: '40%', label: 'Distressed Core Tee', price: '₹1,499' }
-    ]
+  { 
+    id: 2, 
+    title: 'URBAN NOMAD', 
+    tag: 'Drop 01 // V.002', 
+    image: '/products/lookbook2.jpg',
+    hotspots: [{ x: '55%', y: '45%', label: 'Signature Series', price: '₹2,999' }]
   }
 ];
 
@@ -59,13 +54,12 @@ export default function Lookbook() {
             <div key={look.id} className={`flex flex-col ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-20 items-center`}>
               {/* Image Section */}
               <motion.div 
-                style={{ y: idx % 2 === 0 ? y1 : y2 }}
-                className="relative w-full md:w-2/3 aspect-[3/4] rounded-[4rem] overflow-hidden group cursor-crosshair border border-zinc-900"
+                className="relative w-full md:w-2/3 aspect-[3/4] rounded-[4rem] overflow-hidden group cursor-crosshair border border-zinc-900 bg-zinc-900 shadow-2xl"
               >
                 <img 
                   src={look.image} 
                   alt={look.title} 
-                  className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000 scale-105 group-hover:scale-100" 
+                  className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105" 
                 />
                 
                 {/* Hotspots */}

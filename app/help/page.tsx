@@ -1,6 +1,7 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Navbar from '../../components/Navbar';
+import Link from 'next/link';
 import { 
   Package, 
   Truck, 
@@ -10,47 +11,104 @@ import {
   History,
   ArrowRight,
   TrendingDown,
-  CheckCircle2,
-  Clock,
-  ExternalLink
+  ExternalLink,
+  Lock
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { supabase } from '../../lib/supabase';
+import { useToast } from '../../context/ToastContext';
 
-const ORDERS = [
-  {
-    id: '#UV-99210',
-    date: 'May 14, 2024',
-    item: 'Urban Tee "VOID"',
-    price: '₹1,499.00',
-    status: 'Shipped',
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=200&auto=format&fit=crop'
-  },
-  {
-    id: '#UV-98442',
-    date: 'May 10, 2024',
-    item: 'Oversize Cargo Hoodie',
-    price: '₹2,999.00',
-    status: 'Processing',
-    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=200&auto=format&fit=crop'
-  },
-  {
-    id: '#UV-97109',
-    date: 'Apr 22, 2024',
-    item: 'Vein Essential Pack (3x)',
-    price: '₹2,499.00',
-    status: 'Delivered',
-    image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7ec28?q=80&w=200&auto=format&fit=crop'
-  }
-];
+interface OrderItem {
+  id: string;
+  name: string;
+  image: string;
+  price: number;
+}
+
+interface Order {
+  id: string;
+  created_at: string;
+  status: string;
+  total_amount: number;
+  items: OrderItem[];
+}
 
 const QUICK_LINKS = [
-  { icon: RefreshCcw, title: 'Return Policy', desc: '30-day hassle-free returns on all streetwear items.' },
+  { 
+    icon: RefreshCcw, 
+    title: 'Return Policy', 
+    desc: 'No Return Policy. All sales are final on all streetwear items to maintain exclusivity and hygiene standards. Please check the size guide carefully before ordering.' 
+  },
   { icon: Truck, title: 'Shipping Info', desc: 'Flat ₹69 shipping across India with real-time tracking.' },
   { icon: Ruler, title: 'Size Guide', desc: 'Detailed dimensions for our techwear & oversize fits.' },
   { icon: HelpCircle, title: 'Contact Us', desc: '24/7 dedicated support for our global community.' }
 ];
 
 export default function HelpPage() {
+  const [orders, setOrders] = React.useState<Order[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [user, setUser] = React.useState<any>(null);
+  const { showToast } = useToast();
+
+  React.useEffect(() => {
+    const fetchOrders = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+
+      if (user) {
+        try {
+          const { data: ordersData, error: ordersError } = await supabase
+            .from('orders')
+            .select(`
+              id,
+              created_at,
+              status,
+              total_amount,
+              order_items (
+                id,
+                quantity,
+                price,
+                size,
+                color,
+                product_id
+              )
+            `)
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+          if (ordersError) throw ordersError;
+
+          // Process orders to include a primary item name and image
+          // Since order_items only has product_id, we'd ideally join with products,
+          // but for now we'll use a generic name or match with local product data.
+          const processedOrders: Order[] = ordersData.map((order: any) => ({
+            id: order.id,
+            created_at: new Date(order.created_at).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            }),
+            status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
+            total_amount: order.total_amount,
+            items: order.order_items.map((item: any) => ({
+              id: item.id,
+              name: `Product ${item.product_id}`,
+              price: item.price,
+              image: '/products/batman_front.jpg' // Placeholder until we join with products
+            }))
+          }));
+
+          setOrders(processedOrders);
+        } catch (error: any) {
+          console.error('Error fetching orders:', error);
+          showToast('Failed to load order history', 'error');
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchOrders();
+  }, [showToast]);
   return (
     <main className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-red-600/30">
       <Navbar />
@@ -163,45 +221,62 @@ export default function HelpPage() {
               </div>
 
               <div className="space-y-4">
-                {ORDERS.map((order, idx) => (
-                  <div 
-                    key={idx}
-                    className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-3xl bg-zinc-950/50 border border-zinc-900 hover:border-zinc-800 transition-all group"
-                  >
-                    <div className="w-24 h-24 rounded-2xl overflow-hidden bg-zinc-900 flex-shrink-0 border border-zinc-800">
-                      <img src={order.image} alt={order.item} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                    </div>
-                    
-                    <div className="flex-1 text-center sm:text-left">
-                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-2">
-                        <span className="text-xs font-black uppercase tracking-widest text-white">{order.item}</span>
-                        <span className={`text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-                          order.status === 'Shipped' ? 'bg-green-600/10 text-green-500' :
-                          order.status === 'Processing' ? 'bg-yellow-600/10 text-yellow-500' :
-                          'bg-blue-600/10 text-blue-500'
-                        }`}>
-                          {order.status}
-                        </span>
+                {loading ? (
+                  <div className="py-20 text-center">
+                    <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Decrypting History...</p>
+                  </div>
+                ) : !user ? (
+                  <div className="py-20 text-center bg-zinc-950/50 rounded-3xl border border-zinc-900 border-dashed">
+                    <Lock size={32} className="mx-auto mb-4 text-zinc-700" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-6">Authentication Required to View History</p>
+                    <Link href="/login" className="bg-white text-black px-8 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-zinc-200 transition-all">Sign In</Link>
+                  </div>
+                ) : orders.length > 0 ? (
+                  orders.map((order, idx) => (
+                    <div 
+                      key={order.id}
+                      className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-3xl bg-zinc-950/50 border border-zinc-900 hover:border-zinc-800 transition-all group"
+                    >
+                      <div className="w-24 h-24 rounded-2xl overflow-hidden bg-zinc-900 flex-shrink-0 border border-zinc-800">
+                        <img 
+                          src={order.items[0]?.image || '/products/batman_front.jpg'} 
+                          alt="Order Item" 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                        />
                       </div>
-                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Order {order.id} • {order.date}</p>
-                    </div>
+                      
+                      <div className="flex-1 text-center sm:text-left">
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-2">
+                          <span className="text-xs font-black uppercase tracking-widest text-white">
+                            {order.items.length > 1 ? `${order.items[0]?.name} + ${order.items.length - 1} more` : order.items[0]?.name}
+                          </span>
+                          <span className={`text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                            order.status === 'Shipped' || order.status === 'Delivered' ? 'bg-green-600/10 text-green-500' :
+                            'bg-yellow-600/10 text-yellow-500'
+                          }`}>
+                            {order.status}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Order ID: {order.id.slice(0, 8)}... • {order.created_at}</p>
+                      </div>
 
-                    <div className="text-center sm:text-right">
-                      <p className="text-lg font-black tracking-tighter mb-2">{order.price}</p>
-                      <button className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-white transition-colors flex items-center gap-1 mx-auto sm:ml-auto">
-                        Details <ExternalLink size={10} />
-                      </button>
+                      <div className="text-center sm:text-right">
+                        <p className="text-lg font-black tracking-tighter mb-2">₹{order.total_amount.toFixed(2)}</p>
+                        <button className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-white transition-colors flex items-center gap-1 mx-auto sm:ml-auto">
+                          Details <ExternalLink size={10} />
+                        </button>
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="mt-8 border-2 border-dashed border-zinc-900 rounded-[2rem] p-16 flex flex-col items-center justify-center text-center opacity-40">
+                    <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
+                      <TrendingDown size={24} className="text-zinc-600" />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">No older activities</p>
                   </div>
-                ))}
-
-                {/* Empty State / No Older Activities */}
-                <div className="mt-8 border-2 border-dashed border-zinc-900 rounded-[2rem] p-16 flex flex-col items-center justify-center text-center opacity-40">
-                  <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
-                    <TrendingDown size={24} className="text-zinc-600" />
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">No older activities</p>
-                </div>
+                )}
               </div>
             </motion.section>
           </div>

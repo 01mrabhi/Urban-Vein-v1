@@ -4,12 +4,14 @@ import { Heart, Plus, ShoppingCart } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 
 interface ProductCardProps {
   id: string;
   name: string;
   price: string;
   image: string;
+  image_back?: string;
   description: string;
   badge?: string;
   actionType?: 'quick-add' | 'waitlist';
@@ -18,9 +20,11 @@ interface ProductCardProps {
 
 
 export default function ProductCard({ 
+  id,
   name, 
   price, 
   image, 
+  image_back,
   description, 
   badge, 
   actionType = 'quick-add',
@@ -28,6 +32,9 @@ export default function ProductCard({
 }: ProductCardProps) {
   const { showToast } = useToast();
   const { addToCart } = useCart();
+  const { isLiked, toggleLike } = useWishlist();
+
+  const liked = isLiked(id);
 
   return (
     <motion.div 
@@ -48,16 +55,32 @@ export default function ProductCard({
         )}
 
         {/* Wishlist */}
-        <button className="absolute top-6 right-6 z-10 w-10 h-10 bg-zinc-950/80 backdrop-blur-md rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:text-black hover:scale-110">
-          <Heart size={18} />
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleLike(id);
+            showToast(liked ? `Removed ${name} from Wishlist` : `Added ${name} to Wishlist`, 'success');
+          }}
+          className={`absolute top-6 right-6 z-10 w-10 h-10 backdrop-blur-md rounded-full flex items-center justify-center transition-all hover:scale-110 ${liked ? 'bg-red-600 text-white opacity-100' : 'bg-zinc-950/80 text-white opacity-0 group-hover:opacity-100 hover:bg-white hover:text-black'}`}
+        >
+          <Heart size={18} fill={liked ? "currentColor" : "none"} />
         </button>
 
-        {/* Product Image */}
-        <img 
-          src={image} 
-          alt={name} 
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-        />
+        {/* Product Images */}
+        <div className="w-full h-full relative">
+          {image_back && (
+            <img 
+              src={image_back} 
+              alt={`${name} back`} 
+              className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 opacity-0 group-hover:opacity-100" 
+            />
+          )}
+          <img 
+            src={image} 
+            alt={name} 
+            className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${image_back ? 'group-hover:opacity-0' : ''} absolute inset-0`} 
+          />
+        </div>
 
         {/* Action Button */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[85%] z-10 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">

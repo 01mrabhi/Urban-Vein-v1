@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Plus, Minus, Heart, Shield, Package, RefreshCw, ChevronDown, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '../../../context/CartContext';
+import { useWishlist } from '../../../context/WishlistContext';
 import { useToast } from '../../../context/ToastContext';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
@@ -21,10 +22,20 @@ export default function ProductDetailPage() {
 
   const { addToCart } = useCart();
   const { showToast } = useToast();
+  const { isLiked, toggleLike } = useWishlist();
+
+  const liked = product ? isLiked(product.id) : false;
 
   const [selectedSize, setSelectedSize] = useState('L');
   const [quantity, setQuantity] = useState(1);
   const [activeAccordion, setActiveAccordion] = useState<string | null>('details');
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (product && !currentImage) {
+      setCurrentImage(product.image);
+    }
+  }, [product, currentImage]);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -114,13 +125,14 @@ export default function ProductDetailPage() {
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-24 relative">
           
           {/* Left: Image Gallery */}
-          <div className="w-full lg:w-1/2 relative lg:sticky lg:top-32 h-auto lg:h-[80vh]">
-            <div className="group relative w-full h-full aspect-[4/5] lg:aspect-auto overflow-hidden rounded-[3rem] bg-zinc-900 border border-zinc-800">
+          <div className="w-full lg:w-1/2 relative lg:sticky lg:top-32 flex flex-col gap-4">
+            <div className="group relative w-full h-auto aspect-[4/5] overflow-hidden rounded-[3rem] bg-zinc-900 border border-zinc-800">
               <motion.img 
+                key={currentImage || product.image}
                 initial={{ opacity: 0, scale: 1.05 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                src={product.image} 
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                src={currentImage || product.image} 
                 alt={product.name} 
                 className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000 group-hover:scale-105"
               />
@@ -133,6 +145,24 @@ export default function ProductDetailPage() {
                 </div>
               )}
             </div>
+            
+            {/* Thumbnails */}
+            {product.image_back && (
+              <div className="flex gap-4 px-2">
+                <button 
+                  onClick={() => setCurrentImage(product.image)}
+                  className={`relative w-24 h-32 rounded-2xl overflow-hidden border-2 transition-all ${currentImage === product.image ? 'border-red-600' : 'border-zinc-800 hover:border-zinc-500'}`}
+                >
+                  <img src={product.image} alt="Front view" className="w-full h-full object-cover" />
+                </button>
+                <button 
+                  onClick={() => setCurrentImage(product.image_back)}
+                  className={`relative w-24 h-32 rounded-2xl overflow-hidden border-2 transition-all ${currentImage === product.image_back ? 'border-red-600' : 'border-zinc-800 hover:border-zinc-500'}`}
+                >
+                  <img src={product.image_back} alt="Back view" className="w-full h-full object-cover" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Right: Product Details */}
@@ -223,8 +253,14 @@ export default function ProductDetailPage() {
                     </button>
                   )}
                   
-                  <button className="w-16 flex items-center justify-center bg-zinc-900 border border-zinc-800 rounded-3xl text-zinc-400 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-all">
-                    <Heart size={20} />
+                  <button 
+                    onClick={() => {
+                      toggleLike(product.id);
+                      showToast(liked ? `Removed ${product.name} from Wishlist` : `Added ${product.name} to Wishlist`, 'success');
+                    }}
+                    className={`w-16 flex items-center justify-center rounded-3xl transition-all ${liked ? 'bg-red-600 text-white border border-red-600' : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30'}`}
+                  >
+                    <Heart size={20} fill={liked ? "currentColor" : "none"} />
                   </button>
                 </div>
               </div>
@@ -292,7 +328,7 @@ export default function ProductDetailPage() {
                         </div>
                         <div className="flex gap-4 items-center">
                           <RefreshCw size={20} className="text-zinc-500" />
-                          <p>30-Day Return Window. Subject to inspection.</p>
+                          <p>No Return Policy. All sales are final.</p>
                         </div>
                         <div className="flex gap-4 items-center">
                           <Shield size={20} className="text-zinc-500" />

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { useCart } from '../context/CartContext';
+import { supabase } from '../lib/supabase';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -12,17 +13,44 @@ export default function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Initial user check
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth event:", _event, "User:", session?.user?.id);
+      setUser(session?.user ?? null);
+    });
+
     function handleClickOutside(event: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setIsProfileOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      subscription.unsubscribe();
+    };
   }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setIsProfileOpen(false);
+  };
+
+  const fullName = user?.user_metadata?.full_name || 'Urban Explorer';
+  const email = user?.email || '';
 
   return (
     <nav className="flex items-center px-8 py-6 bg-zinc-950 border-b border-zinc-900 sticky top-0 z-50 backdrop-blur-md bg-zinc-950/80">
@@ -75,18 +103,31 @@ export default function Navbar() {
               )}
             </AnimatePresence>
           </button>
+          
           <div className="relative" ref={profileRef}>
-            <div 
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-zinc-800 flex items-center justify-center cursor-pointer hover:border-zinc-600 transition-all p-0.5"
-            >
-              <div className="w-full h-full rounded-full bg-zinc-900 overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop" alt="User" />
+            {user ? (
+              <div 
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-zinc-800 flex items-center justify-center cursor-pointer hover:border-zinc-600 transition-all p-0.5"
+              >
+                <div className="w-full h-full rounded-full bg-zinc-900 overflow-hidden">
+                  <img 
+                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${fullName}&backgroundColor=b91c1c&fontFamily=Arial&fontWeight=700`} 
+                    alt="User" 
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <Link 
+                href="/login"
+                className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all border border-zinc-900 hover:border-zinc-800"
+              >
+                <User size={20} />
+              </Link>
+            )}
 
             <AnimatePresence>
-              {isProfileOpen && (
+              {isProfileOpen && user && (
                 <motion.div
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -95,17 +136,21 @@ export default function Navbar() {
                   className="absolute right-0 mt-3 w-56 bg-zinc-950/90 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden z-50"
                 >
                   <div className="p-4 border-b border-zinc-800/50 bg-zinc-900/30">
-                    <p className="text-sm font-bold text-white tracking-wide">Alex Mercer</p>
-                    <p className="text-xs text-zinc-500 font-medium mt-0.5">alex@urbanvein.com</p>
+                    <p className="text-sm font-bold text-white tracking-wide truncate">{fullName}</p>
+                    <p className="text-xs text-zinc-500 font-medium mt-0.5 truncate">{email}</p>
                   </div>
                   <div className="p-2 flex flex-col gap-1">
+                    <Link onClick={() => setIsProfileOpen(false)} href="/#shop" className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-all">
+                      <ShoppingBag size={16} className="text-red-500" />
+                      <span className="font-semibold tracking-wide">Go to Shop</span>
+                    </Link>
                     <Link onClick={() => setIsProfileOpen(false)} href="/profile" className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-all">
                       <User size={16} />
                       <span className="font-semibold tracking-wide">My Profile</span>
                     </Link>
                   </div>
                   <div className="p-2 border-t border-zinc-800/50">
-                    <button onClick={() => setIsProfileOpen(false)} className="w-full flex items-center justify-between px-3 py-2 text-sm text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
+                    <button onClick={handleSignOut} className="w-full flex items-center justify-between px-3 py-2 text-sm text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
                       <span className="font-bold tracking-wide">Sign Out</span>
                     </button>
                   </div>
@@ -139,10 +184,28 @@ export default function Navbar() {
             </button>
             
             <nav className="flex flex-col gap-6 flex-1 mt-10">
+              {user && (
+                <div className="mb-6 p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800">
+                  <p className="text-xs font-bold text-red-600 uppercase tracking-widest mb-1">Authenticated</p>
+                  <p className="text-2xl font-black text-white truncate">{fullName}</p>
+                  <p className="text-sm text-zinc-500 truncate">{email}</p>
+                </div>
+              )}
               <Link onClick={() => setIsMobileMenuOpen(false)} href="/#shop" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Shop</Link>
               <Link onClick={() => setIsMobileMenuOpen(false)} href="/help" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Support</Link>
               <Link onClick={() => setIsMobileMenuOpen(false)} href="/lookbook" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Lookbook</Link>
               <Link onClick={() => setIsMobileMenuOpen(false)} href="/profile" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Profile</Link>
+              {user && (
+                <button 
+                  onClick={() => {
+                    handleSignOut();
+                    setIsMobileMenuOpen(false);
+                  }} 
+                  className="text-left text-4xl xs:text-5xl font-black uppercase tracking-tighter text-red-600 hover:text-white transition-colors italic"
+                >
+                  Sign Out
+                </button>
+              )}
             </nav>
             
             <div className="mt-12 flex flex-col gap-4 border-t border-zinc-900 pt-8">

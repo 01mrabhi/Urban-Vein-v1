@@ -1,8 +1,11 @@
 'use client';
-import React, { useState } from 'react';
-import { User, Package, MapPin, Settings, Mail, Phone, Shield, ExternalLink, Camera } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Package, MapPin, Settings, Mail, Phone, Shield, ExternalLink, Camera, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
+import { supabase } from '../../lib/supabase';
+import { useRouter } from 'next/navigation';
+import { useToast } from '../../context/ToastContext';
 
 const TABS = [
   { id: 'personal', label: 'Personal Info', icon: User },
@@ -11,24 +14,74 @@ const TABS = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-const ORDERS = [
-  { id: 'ORD-2024-001', date: 'Oct 24, 2024', status: 'Delivered', total: '₹2,999.00', items: 2 },
-  { id: 'ORD-2024-002', date: 'Nov 12, 2024', status: 'In Transit', total: '₹1,499.00', items: 1 },
-];
-
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('personal');
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+  const router = useRouter();
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      setUser(user);
+      fetchOrders(user.id);
+      setLoading(false);
+    };
+
+    checkUser();
+  }, []);
+
+  const fetchOrders = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setOrders(data);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    showToast('Signed out successfully', 'success');
+    router.push('/');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  const fullName = user?.user_metadata?.full_name || 'Urban Explorer';
+  const email = user?.email;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] pt-24 pb-12 px-4 selection:bg-red-600/30">
       <div className="max-w-[1200px] mx-auto">
         
         {/* Header */}
-        <div className="mb-10 flex items-end justify-between">
+        <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-4xl font-black text-white tracking-tight mb-2 uppercase">My Profile</h1>
             <p className="text-zinc-500 font-medium tracking-wide">Manage your account details and order history.</p>
           </div>
+          <Link 
+            href="/#shop" 
+            className="inline-flex items-center gap-2 bg-white text-black px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+          >
+            Continue Shopping
+          </Link>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -43,7 +96,7 @@ export default function ProfilePage() {
                 <div className="w-24 h-24 rounded-full bg-zinc-900 border-2 border-zinc-800 p-1 mb-4 relative cursor-pointer group/avatar">
                   <div className="w-full h-full rounded-full overflow-hidden relative">
                     <img 
-                      src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop" 
+                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${fullName}&backgroundColor=b91c1c&fontFamily=Arial&fontWeight=700`} 
                       alt="User Avatar" 
                       className="w-full h-full object-cover"
                     />
@@ -52,11 +105,11 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </div>
-                <h2 className="text-lg font-bold text-white tracking-wide">Alex Mercer</h2>
-                <p className="text-zinc-500 text-sm font-medium">alex@urbanvein.com</p>
+                <h2 className="text-lg font-bold text-white tracking-wide">{fullName}</h2>
+                <p className="text-zinc-500 text-sm font-medium">{email}</p>
                 <div className="mt-4 inline-flex items-center gap-2 bg-red-600/10 px-3 py-1 rounded-full border border-red-600/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
-                  <span className="text-xs font-bold text-red-500 uppercase tracking-widest">VIP Member</span>
+                  <span className="text-xs font-bold text-red-500 uppercase tracking-widest">Active Member</span>
                 </div>
               </div>
             </div>
@@ -84,8 +137,11 @@ export default function ProfilePage() {
               
               <div className="h-px bg-zinc-900 my-2"></div>
               
-              <button className="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all font-semibold tracking-wide text-sm text-red-500 hover:text-red-400 hover:bg-red-500/10">
-                <Shield size={18} />
+              <button 
+                onClick={handleSignOut}
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all font-semibold tracking-wide text-sm text-red-500 hover:text-red-400 hover:bg-red-500/10"
+              >
+                <LogOut size={18} />
                 Sign Out
               </button>
             </div>
@@ -108,38 +164,33 @@ export default function ProfilePage() {
                 >
                   <div className="mb-8">
                     <h3 className="text-xl font-bold text-white tracking-wide mb-1">Personal Information</h3>
-                    <p className="text-zinc-500 text-sm">Update your personal details and how we can reach you.</p>
+                    <p className="text-zinc-500 text-sm">View and manage your account details.</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold tracking-widest uppercase text-zinc-500">First Name</label>
-                      <input type="text" defaultValue="Alex" className="w-full bg-zinc-950 text-white border border-zinc-800 px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-red-600/50 focus:ring-1 focus:ring-red-600/50 transition-all font-medium" />
+                      <label className="text-[10px] font-bold tracking-widest uppercase text-zinc-500">Full Name</label>
+                      <input type="text" readOnly value={fullName} className="w-full bg-zinc-950 text-white border border-zinc-800 px-4 py-3 rounded-xl text-sm focus:outline-none opacity-80 font-medium cursor-not-allowed" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold tracking-widest uppercase text-zinc-500">Last Name</label>
-                      <input type="text" defaultValue="Mercer" className="w-full bg-zinc-950 text-white border border-zinc-800 px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-red-600/50 focus:ring-1 focus:ring-red-600/50 transition-all font-medium" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold tracking-widest uppercase text-zinc-500">Email Address (Gmail)</label>
+                      <label className="text-[10px] font-bold tracking-widest uppercase text-zinc-500">Email Address</label>
                       <div className="relative">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                        <input type="email" defaultValue="alex@urbanvein.com" className="w-full bg-zinc-950 text-white border border-zinc-800 pl-11 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-red-600/50 focus:ring-1 focus:ring-red-600/50 transition-all font-medium" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold tracking-widest uppercase text-zinc-500">Phone Number</label>
-                      <div className="relative">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                        <input type="tel" defaultValue="+1 (555) 123-4567" className="w-full bg-zinc-950 text-white border border-zinc-800 pl-11 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-red-600/50 focus:ring-1 focus:ring-red-600/50 transition-all font-medium" />
+                        <input type="email" readOnly value={email} className="w-full bg-zinc-950 text-white border border-zinc-800 pl-11 pr-4 py-3 rounded-xl text-sm focus:outline-none opacity-80 font-medium cursor-not-allowed" />
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-4 flex justify-end">
-                    <button className="bg-white text-black hover:bg-zinc-200 font-bold px-6 py-2.5 rounded-xl text-sm tracking-wide transition-colors">
-                      Save Changes
-                    </button>
+                  <div className="pt-4 p-4 rounded-2xl bg-zinc-900/30 border border-zinc-800/50">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-full bg-red-600/10 flex items-center justify-center flex-shrink-0">
+                        <Shield className="text-red-500" size={20} />
+                      </div>
+                      <div>
+                        <h4 className="text-white font-bold text-sm tracking-wide">Security Note</h4>
+                        <p className="text-zinc-500 text-xs mt-1 leading-relaxed">Your account is secured with Supabase Authentication. Profile updates are currently disabled in the beta release.</p>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -158,27 +209,45 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="space-y-4">
-                    {ORDERS.map(order => (
-                      <div key={order.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition-colors">
-                        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                          <div>
-                            <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest mb-1">{order.date}</p>
-                            <p className="text-white font-bold tracking-wide">{order.id}</p>
+                    {orders.length > 0 ? (
+                      orders.map(order => (
+                        <div key={order.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition-colors">
+                          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                            <div>
+                              <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest mb-1">
+                                {new Date(order.created_at).toLocaleDateString('en-IN', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </p>
+                              <p className="text-white font-bold tracking-wide">ORD-{order.id.slice(0, 8).toUpperCase()}</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <span className="text-sm font-bold text-white">₹{order.total_amount.toLocaleString()} <span className="text-zinc-500 text-xs">({order.order_items?.length || 0} items)</span></span>
+                              <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
+                                order.status === 'delivered' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 
+                                order.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+                                'bg-zinc-900 text-zinc-300 border-zinc-800'
+                              }`}>
+                                {order.status}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <span className="text-sm font-bold text-white">{order.total} <span className="text-zinc-500 text-xs">({order.items} items)</span></span>
-                            <span className="text-[10px] font-black uppercase tracking-widest bg-zinc-900 text-zinc-300 px-3 py-1 rounded-full border border-zinc-800">
-                              {order.status}
-                            </span>
+                          <div className="flex justify-end pt-4 border-t border-zinc-900">
+                            <button className="flex items-center gap-2 text-xs font-semibold text-red-500 hover:text-red-400 uppercase tracking-widest transition-colors">
+                              View Details <ExternalLink size={12} />
+                            </button>
                           </div>
                         </div>
-                        <div className="flex justify-end pt-4 border-t border-zinc-900">
-                          <button className="flex items-center gap-2 text-xs font-semibold text-red-500 hover:text-red-400 uppercase tracking-widest transition-colors">
-                            View Details <ExternalLink size={12} />
-                          </button>
-                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-20 bg-zinc-950/50 rounded-3xl border border-zinc-900 border-dashed">
+                        <Package size={48} className="mx-auto text-zinc-800 mb-4" />
+                        <p className="text-zinc-500 font-bold tracking-wide">No orders found.</p>
+                        <Link href="/#shop" className="text-red-500 text-sm font-black uppercase tracking-widest mt-4 inline-block hover:text-red-400">Start Shopping</Link>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -196,27 +265,12 @@ export default function ProfilePage() {
                       <h3 className="text-xl font-bold text-white tracking-wide mb-1">Saved Addresses</h3>
                       <p className="text-zinc-500 text-sm">Manage your shipping and billing addresses.</p>
                     </div>
-                    <button className="bg-white text-black hover:bg-zinc-200 font-bold px-4 py-2 rounded-xl text-xs tracking-wide transition-colors">
-                      Add New
-                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="relative bg-zinc-950 border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition-colors">
-                      <div className="absolute top-4 right-4">
-                        <span className="bg-red-600/10 text-red-500 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded border border-red-600/20">Default</span>
-                      </div>
-                      <MapPin className="text-zinc-600 w-5 h-5 mb-3" />
-                      <h4 className="text-white font-bold tracking-wide text-sm mb-1">Home</h4>
-                      <p className="text-zinc-400 text-xs leading-relaxed mb-4">
-                        123 Cyber Street, Apt 4B<br/>
-                        Neo Tokyo Sector, CA 90210<br/>
-                        United States
-                      </p>
-                      <div className="flex gap-3">
-                        <button className="text-xs text-white font-semibold hover:text-zinc-300 transition-colors">Edit</button>
-                        <button className="text-xs text-zinc-500 font-semibold hover:text-red-500 transition-colors">Remove</button>
-                      </div>
+                    <div className="text-center py-12 bg-zinc-950/50 rounded-3xl border border-zinc-900 border-dashed col-span-full">
+                      <MapPin size={32} className="mx-auto text-zinc-800 mb-2" />
+                      <p className="text-zinc-500 text-sm font-medium">Addresses are saved automatically during checkout.</p>
                     </div>
                   </div>
                 </motion.div>
@@ -246,23 +300,6 @@ export default function ProfilePage() {
                         <input type="checkbox" className="sr-only peer" defaultChecked />
                         <div className="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between py-4 border-b border-zinc-800/50">
-                      <div>
-                        <h4 className="text-white font-semibold tracking-wide text-sm">Order Notifications</h4>
-                        <p className="text-zinc-500 text-xs mt-1">Get SMS and email alerts about your order status.</p>
-                      </div>
-                      <div className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                      </div>
-                    </div>
-
-                    <div className="pt-4">
-                      <button className="text-sm font-semibold text-red-500 hover:text-red-400 transition-colors">
-                        Change Password
-                      </button>
                     </div>
                   </div>
                 </motion.div>

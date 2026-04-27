@@ -6,8 +6,28 @@ import { motion } from 'motion/react';
 import ProductSection from '../components/ProductSection';
 import Footer from '../components/Footer';
 import Lookbook from '../components/Lookbook';
+import LoginModal from '../components/LoginModal';
+import { supabase } from '../lib/supabase';
 
 export default function Home() {
+  const [isLoginModalOpen, setIsLoginModalOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const hasSeenPopup = sessionStorage.getItem('hasSeenLoginPopup');
+      
+      if (!user && !hasSeenPopup) {
+        // Show popup after a short delay for impact
+        setTimeout(() => {
+          setIsLoginModalOpen(true);
+        }, 1500);
+      }
+    };
+
+    checkUser();
+  }, []);
+
   return (
     <main className="min-h-screen bg-zinc-950 text-white overflow-x-hidden selection:bg-red-600/30">
       <Navbar />
@@ -90,6 +110,10 @@ export default function Home() {
       <Lookbook />
 
       <Footer />
+      <LoginModal 
+        isOpen={isLoginModalOpen} 
+        onClose={() => setIsLoginModalOpen(false)} 
+      />
     </main>
   );
 }

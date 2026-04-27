@@ -1,38 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { motion } from 'motion/react';
-import { CATEGORIES, Product } from '../lib/data';
+import { CATEGORIES, Product, PRODUCTS } from '../lib/data';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../lib/supabase';
 
 export default function ProductSection() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchProducts() {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select('*');
-      
-      if (error) {
-        console.error('Error fetching products:', error);
-      } else if (data) {
-        // Map original_id to id for compatibility with existing code
-        const mappedProducts: Product[] = data.map(p => ({
-          ...p,
-          id: p.original_id,
-          actionType: p.action_type
-        }));
-        setProducts(mappedProducts);
-      }
-      setLoading(false);
-    }
-
-    fetchProducts();
+    // Using local data as requested to ensure real images are used
+    setProducts(PRODUCTS);
+    setLoading(false);
   }, []);
 
   const handleNavigateToProduct = (product: Product) => {

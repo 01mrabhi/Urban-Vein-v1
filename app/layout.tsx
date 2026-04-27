@@ -19,18 +19,21 @@ export const metadata: Metadata = {
 
 import { ToastProvider } from '../context/ToastContext';
 import { CartProvider } from '../context/CartContext';
+import { WishlistProvider } from '../context/WishlistContext';
 import CartSidebar from '../components/CartSidebar';
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="font-sans antialiased bg-zinc-950 text-white" suppressHydrationWarning>
-        <CartProvider>
-          <ToastProvider>
-            {children}
-            <CartSidebar />
-          </ToastProvider>
-        </CartProvider>
+        <WishlistProvider>
+          <CartProvider>
+            <ToastProvider>
+              {children}
+              <CartSidebar />
+            </ToastProvider>
+          </CartProvider>
+        </WishlistProvider>
       </body>
     </html>
   );

@@ -42,6 +42,7 @@ const RECOMMENDED = [
 
 import { useToast } from '../context/ToastContext';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 
 export default function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
   const [selectedSize, setSelectedSize] = useState('L');
@@ -49,6 +50,9 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
   const [isAdding, setIsAdding] = useState(false);
   const { showToast } = useToast();
   const { addToCart } = useCart();
+  const { isLiked, toggleLike } = useWishlist();
+
+  const liked = product ? isLiked(product.id) : false;
 
   if (!product) return null;
 
@@ -208,8 +212,15 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                       <><ShoppingCart size={18} className="group-hover:translate-x-1 transition-transform" /> Add to Cart</>
                     )}
                   </button>
-                  <button className="w-full bg-zinc-950 border border-zinc-900 text-white py-6 rounded-3xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 hover:bg-zinc-900 transition-all active:scale-95 group">
-                    <Heart size={18} className="group-hover:scale-110 group-hover:fill-red-600 group-hover:text-red-600 transition-all" /> Add to Wishlist
+                  <button 
+                    onClick={() => {
+                      toggleLike(product.id);
+                      showToast(liked ? `Removed ${product.name} from Wishlist` : `Added ${product.name} to Wishlist`, 'success');
+                    }}
+                    className={`w-full py-6 rounded-3xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 transition-all active:scale-95 group ${liked ? 'bg-red-600/10 border border-red-600/50 text-red-600' : 'bg-zinc-950 border border-zinc-900 text-white hover:bg-zinc-900'}`}
+                  >
+                    <Heart size={18} className={`transition-all ${liked ? 'fill-red-600 text-red-600 scale-110' : 'group-hover:scale-110 group-hover:text-red-600'}`} fill={liked ? "currentColor" : "none"} />
+                    {liked ? 'Added to Wishlist' : 'Add to Wishlist'}
                   </button>
                 </div>
 

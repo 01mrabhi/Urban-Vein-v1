@@ -11,6 +11,7 @@ export type Product = {
   price: string;
   description: string;
   image: string;
+  image_back?: string;
   category: string;
   badge?: string;
   actionType?: 'quick-add' | 'waitlist';
@@ -19,69 +20,47 @@ export type Product = {
 export const PRODUCTS: Product[] = [
   {
     id: '1',
-    name: 'Oversized Heavy Tee',
-    price: '₹1,499.00',
-    description: 'Heavyweight 300GSM premium cotton, drop shoulder fit.',
-    image: '/products/Tshirt1-min.jpg',
-    category: 'Oversized Collection'
+    name: 'Zoro Katana Tee',
+    price: '₹599.00',
+    description: '“Green Aura” — Inspired by the signature green energy and presence of Roronoa Zoro, the name represents calm intensity, inner strength, and silent dominance.',
+    image: '/products/zoro_front.jpg',
+    image_back: '/products/zoro_back.jpg',
+    category: 'Graphic Series'
   },
   {
     id: '2',
-    name: 'Cyber Graphic Tee',
-    price: '₹1,799.00',
-    description: 'Limited edition high-density screen print with architectural aesthetics.',
-    image: '/products/Tshirt2-min.jpg',
-    category: 'Graphic Series'
+    name: 'Panther Strike Tee',
+    price: '₹549.00',
+    description: 'Vein Beast: Short, bold, and brand-connected—suggests power running through you.',
+    image: '/products/panther_front.jpg',
+    image_back: '/products/panther_back.jpg',
+    category: 'Limited Drops'
   },
   {
     id: '3',
-    name: 'Midnight Essential',
-    price: '₹999.00',
-    description: 'Minimalist silhouette for everyday layering. Pre-shrunk silicone wash.',
-    image: '/products/Tshirt3-min.jpg',
-    category: 'Essential Solids'
-  },
-  {
-    id: '4',
-    name: 'Red Glow Limited',
-    price: '₹2,499.00',
-    description: 'Numbered release. Only 50 units produced globally. Features reactive glow.',
-    image: '/products/Tshirt4-min.jpg',
-    category: 'Limited Drops',
-    badge: 'RARE',
-    actionType: 'waitlist'
-  },
-  {
-    id: '5',
-    name: 'Phantom Tech Hoodie',
-    price: '₹2,999.00',
-    description: 'Triple-fleece structure with reinforced architectural stitching.',
-    image: '/products/hoodi1-min.jpg',
-    category: 'Oversized Collection'
-  },
-  {
-    id: '6',
-    name: 'Lava Series Hoodie',
-    price: '₹3,299.00',
-    description: 'Thermal-reactive graphic on heavyweight 400GSM loopback terry.',
-    image: '/products/hoodi2-min.jpg',
+    name: 'Anime White Variant',
+    price: '₹549.00',
+    description: 'Vow of Chaos: Feels ritualistic — like the character has embraced destruction as a path or purpose',
+    image: '/products/white_anime_front.jpg',
+    image_back: '/products/white_anime_back.jpg',
     category: 'Graphic Series'
   },
   {
-    id: '7',
-    name: 'Core Blue Variant',
-    price: '₹2,799.00',
-    description: 'Brushed interior for maximum comfort in urban environments.',
-    image: '/products/hoodi3-min.jpg',
-    category: 'Essential Solids'
+    id: '4',
+    name: 'Batman Series Tee',
+    price: '₹599.00',
+    description: 'The Knight Variant: Using "Variant" implies a unique design—it hints that this isn\'t just a generic shirt, but a curated art piece.',
+    image: '/products/batman_front.jpg',
+    image_back: '/products/batman_back.jpg',
+    category: 'Oversized Collection'
   },
   {
-    id: '8',
-    name: 'Urban Shield Hoodie',
-    price: '₹3,999.00',
-    description: 'Water-repellent finish with magnetic stash pockets. Final Drop.',
-    image: '/products/hoodie4-min.jpg',
-    category: 'Limited Drops',
-    badge: 'ELITE'
+    id: '5',
+    name: 'CSK Edition Tee',
+    price: '₹499.00',
+    description: '“Roar of Champions” Captures the lion’s aggression and the winning legacy feel.',
+    image: '/products/csk_front.jpg',
+    image_back: '/products/csk_back.jpg',
+    category: 'Essential Solids'
   }
 ];
