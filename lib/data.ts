@@ -19,13 +19,13 @@ export type Product = {
 
 export const PRODUCTS: Product[] = [
   {
-    id: '1',
-    name: 'Zoro Katana Tee',
-    price: '₹599.00',
-    description: '“Green Aura” — Inspired by the signature green energy and presence of Roronoa Zoro, the name represents calm intensity, inner strength, and silent dominance.',
-    image: '/products/zoro_front.jpg',
-    image_back: '/products/zoro_back.jpg',
-    category: 'Graphic Series'
+    id: '5',
+    name: 'CSK Edition Tee',
+    price: '₹499.00',
+    description: '“Roar of Champions” Captures the lion’s aggression and the winning legacy feel.',
+    image: '/products/csk_front.jpg',
+    image_back: '/products/csk_back.jpg',
+    category: 'Limited Drops'
   },
   {
     id: '2',
@@ -34,7 +34,7 @@ export const PRODUCTS: Product[] = [
     description: 'Vein Beast: Short, bold, and brand-connected—suggests power running through you.',
     image: '/products/panther_front.jpg',
     image_back: '/products/panther_back.jpg',
-    category: 'Limited Drops'
+    category: 'Essential Solids'
   },
   {
     id: '3',
@@ -55,12 +55,12 @@ export const PRODUCTS: Product[] = [
     category: 'Oversized Collection'
   },
   {
-    id: '5',
-    name: 'CSK Edition Tee',
-    price: '₹499.00',
-    description: '“Roar of Champions” Captures the lion’s aggression and the winning legacy feel.',
-    image: '/products/csk_front.jpg',
-    image_back: '/products/csk_back.jpg',
-    category: 'Essential Solids'
+    id: '1',
+    name: 'Zoro Katana Tee',
+    price: '₹599.00',
+    description: '“Green Aura” — Inspired by the signature green energy and presence of Roronoa Zoro, the name represents calm intensity, inner strength, and silent dominance.',
+    image: '/products/zoro_front.jpg',
+    image_back: '/products/zoro_back.jpg',
+    category: 'Graphic Series'
   }
 ];
