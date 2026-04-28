@@ -2,17 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import { 
-  CreditCard, 
-  Lock, 
+  PhoneIcon, 
   ChevronRight, 
-  Info, 
-  Apple, 
-  Wallet,
-  CheckCircle2,
-  Tag,
-  MapPin,
-  Phone as PhoneIcon,
-  User
+  Trash2, 
+  MapPin, 
+  ShieldCheck, 
+  User,
+  ShoppingBag,
+  ArrowLeft
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useCart } from '../../context/CartContext';
@@ -81,8 +78,8 @@ export default function CheckoutPage() {
     }
 
     const { fullName, phone, houseNumber, streetName, landmark, pinCode } = formData;
-    if (!fullName || !phone || !houseNumber || !streetName || !pinCode) {
-      showToast('Please fill in all mandatory shipping details', 'error');
+    if (!fullName || !phone || !houseNumber || !streetName || !landmark || !pinCode) {
+      showToast('Please fill in all shipping details', 'error');
       return;
     }
 
@@ -184,33 +181,12 @@ export default function CheckoutPage() {
           <div className="lg:col-span-7 space-y-12">
             <header>
               <div className="flex items-center gap-3 text-zinc-500 mb-4">
-                <Lock size={14} />
+                <ShieldCheck size={14} />
                 <span className="text-[10px] font-black uppercase tracking-[0.3em]">Secure Checkout</span>
               </div>
               <h1 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter mb-4">Secure Payment</h1>
               <p className="text-red-500 font-bold uppercase tracking-[0.2em] text-xs">Complete your digital identity</p>
             </header>
-
-            {/* Express Checkout */}
-            <section>
-              <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-6">Express Checkout</h2>
-              <div className="grid grid-cols-3 gap-4">
-                <button className="h-16 rounded-2xl bg-zinc-900/50 border border-zinc-900 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-800 transition-all">
-                  <Apple size={24} />
-                </button>
-                <button className="h-16 rounded-2xl bg-zinc-900/50 border border-zinc-900 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-800 transition-all">
-                  <Wallet size={24} className="text-blue-500" />
-                </button>
-                <button className="h-16 rounded-2xl bg-zinc-900/50 border border-zinc-900 flex items-center justify-center hover:bg-zinc-900 hover:border-zinc-800 transition-all">
-                  <span className="font-black italic text-sm">PayPal</span>
-                </button>
-              </div>
-            </section>
-
-            <div className="relative py-4 flex items-center justify-center">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-900"></div></div>
-              <span className="relative bg-zinc-950 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-600 italic">or pay with card</span>
-            </div>
 
             {/* Checkout Form */}
             <form className="space-y-8" onSubmit={handlePurchase}>
@@ -278,8 +254,9 @@ export default function CheckoutPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Nearby Landmark (Optional)</label>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Nearby Landmark</label>
                     <input 
+                      required
                       type="text" 
                       placeholder="e.g. Near Metro Station"
                       className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
@@ -301,47 +278,9 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Card Form */}
-              <div className="space-y-6">
-                <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Card Details</h2>
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Card Number</label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      placeholder="0000 0000 0000 0000"
-                      className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
-                    />
-                    <CreditCard size={18} className="absolute right-6 top-1/2 -translate-y-1/2 text-zinc-700" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Expiry Date</label>
-                    <input 
-                      type="text" 
-                      placeholder="MM / YY"
-                      className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3 flex items-center justify-between">
-                      CVV / CVC
-                      <Info size={12} className="text-zinc-700 hover:text-red-500 cursor-help" />
-                    </label>
-                    <input 
-                      type="password" 
-                      placeholder="***"
-                      className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
-                    />
-                  </div>
-                </div>
-              </div>
-
               <div className="flex items-center gap-3">
-                <input type="checkbox" id="save-card" className="w-5 h-5 accent-red-600 rounded-md bg-zinc-900 border-zinc-800" />
-                <label htmlFor="save-card" className="text-xs text-zinc-500 font-bold tracking-tight">Securely save my card for future purchases</label>
+                <input type="checkbox" id="save-address" className="w-5 h-5 accent-red-600 rounded-md bg-zinc-900 border-zinc-800" defaultChecked />
+                <label htmlFor="save-address" className="text-xs text-zinc-500 font-bold tracking-tight">Save this address to my profile for future orders</label>
               </div>
 
               <button 
@@ -354,7 +293,7 @@ export default function CheckoutPage() {
               </button>
               
               <div className="flex items-center justify-center gap-2 text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
-                <CheckCircle2 size={12} className="text-green-600" />
+                <ShieldCheck size={12} className="text-green-600" />
                 Encrypted & Secure 256-bit SSL Connection
               </div>
             </form>
@@ -436,10 +375,8 @@ export default function CheckoutPage() {
              <a href="#" className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-white transition-colors">Shipping Info</a>
              <a href="#" className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-white transition-colors">Contact Support</a>
           </div>
-          <div className="flex items-center gap-6 text-zinc-600 grayscale opacity-40">
-             <CreditCard size={24} />
-             <Apple size={24} />
-             <Wallet size={24} />
+          <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-zinc-700">
+             Securely Handcrafted Checkout
           </div>
         </div>
         <div className="text-center mt-12 text-[8px] font-bold text-zinc-700 uppercase tracking-[0.5em]">
