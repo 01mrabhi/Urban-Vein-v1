@@ -41,7 +41,7 @@ export default function NewArrivalsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white">
+    <main className="min-h-screen bg-zinc-950 text-white pt-20 lg:pt-24">
       <Navbar />
       <section className="p-6 md:p-12 lg:p-24 max-w-7xl mx-auto">
         <div className="flex items-center gap-4 mb-4">

@@ -6,7 +6,7 @@ import Lookbook from '../../components/Lookbook';
 
 export default function LookbookPage() {
   return (
-    <main className="min-h-screen bg-zinc-950 text-white overflow-x-hidden selection:bg-red-600/30">
+    <main className="min-h-screen bg-zinc-950 text-white overflow-x-hidden selection:bg-red-600/30 pt-20 lg:pt-24">
       <Navbar />
       <div className="min-h-[70vh]">
         <Lookbook />

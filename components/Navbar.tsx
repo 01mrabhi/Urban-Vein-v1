@@ -53,7 +53,7 @@ export default function Navbar() {
   const email = user?.email || '';
 
   return (
-    <nav className="flex items-center px-8 py-6 bg-zinc-950 border-b border-zinc-900 sticky top-0 z-50 backdrop-blur-md bg-zinc-950/80">
+    <nav className="fixed top-0 left-0 w-full flex items-center px-6 lg:px-8 py-4 lg:py-6 bg-zinc-950 border-b border-zinc-900 z-[100] backdrop-blur-md bg-zinc-950/80">
       {/* Left Section: Logo */}
       <div className="flex-1 flex items-center">
         <Link href="/" className="flex items-center">

@@ -128,7 +128,7 @@ export default function ProductDetailPage() {
     <main className="min-h-screen bg-zinc-950 text-white overflow-x-hidden selection:bg-red-600/30">
       <Navbar />
       
-      <div className="pt-8 pb-32 px-4 md:px-8 max-w-[1600px] mx-auto min-h-screen">
+      <div className="pt-24 lg:pt-32 pb-32 px-4 md:px-8 max-w-[1600px] mx-auto min-h-screen">
         
         {/* Breadcrumb Navigation */}
         <div className="mb-12 border-b border-zinc-900 pb-6 flex items-center justify-between">

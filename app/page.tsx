@@ -29,7 +29,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white overflow-x-hidden selection:bg-red-600/30">
+    <main className="min-h-screen bg-zinc-950 text-white overflow-x-hidden selection:bg-red-600/30 pt-20 lg:pt-24">
       <Navbar />
       
       {/* Hero Section */}
