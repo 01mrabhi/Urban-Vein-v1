@@ -22,6 +22,18 @@ export default function ProfilePage() {
   const router = useRouter();
   const { showToast } = useToast();
 
+  const fetchOrders = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setOrders(data);
+    }
+  };
+
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -35,19 +47,7 @@ export default function ProfilePage() {
     };
 
     checkUser();
-  }, []);
-
-  const fetchOrders = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*, order_items(*)')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setOrders(data);
-    }
-  };
+  }, [router]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -268,10 +268,53 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="text-center py-12 bg-zinc-950/50 rounded-3xl border border-zinc-900 border-dashed col-span-full">
-                      <MapPin size={32} className="mx-auto text-zinc-800 mb-2" />
-                      <p className="text-zinc-500 text-sm font-medium">Addresses are saved automatically during checkout.</p>
-                    </div>
+                    {user?.user_metadata?.address_details ? (
+                      <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-8 relative group hover:border-red-600/30 transition-all">
+                        <div className="absolute top-6 right-6 w-8 h-8 rounded-full bg-red-600/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <MapPin size={14} className="text-red-500" />
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 mb-4">
+                            <span className="bg-red-600/10 text-red-500 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-red-600/20 tracking-widest">
+                              Primary Address
+                            </span>
+                          </div>
+
+                          <div>
+                            <h4 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-2">Delivery Contact</h4>
+                            <p className="text-white font-bold text-lg">{user.user_metadata.full_name}</p>
+                            <p className="text-zinc-400 text-sm font-medium mt-1">{user.user_metadata.address_details.phone}</p>
+                          </div>
+
+                          <div className="pt-4 border-t border-zinc-900">
+                            <h4 className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-2">Location</h4>
+                            <p className="text-white font-medium leading-relaxed">
+                              {user.user_metadata.address_details.houseNumber}, {user.user_metadata.address_details.streetName}
+                              {user.user_metadata.address_details.landmark && <><br /><span className="text-zinc-500 italic">Near: {user.user_metadata.address_details.landmark}</span></>}
+                              <br />
+                              <span className="text-red-500 font-bold">PIN: {user.user_metadata.address_details.pinCode}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-8 flex gap-3">
+                          <Link 
+                            href="/checkout"
+                            className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white text-[10px] font-black uppercase tracking-widest py-3 rounded-xl text-center transition-colors"
+                          >
+                            Update
+                          </Link>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-20 bg-zinc-950/50 rounded-3xl border border-zinc-900 border-dashed col-span-full">
+                        <MapPin size={48} className="mx-auto text-zinc-800 mb-4" />
+                        <p className="text-zinc-500 font-bold tracking-wide">No saved addresses found.</p>
+                        <p className="text-zinc-600 text-xs mt-2">Addresses are saved automatically during checkout.</p>
+                        <Link href="/#shop" className="text-red-500 text-sm font-black uppercase tracking-widest mt-6 inline-block hover:text-red-400">Start Shopping</Link>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}

@@ -163,12 +163,13 @@ export default function CartSidebar() {
                   </div>
                 </div>
 
-                <button 
-                  onClick={handleWhatsAppCheckout}
-                  className="w-full bg-green-600 hover:bg-green-500 text-white rounded-xl py-4 flex items-center justify-center gap-2 font-black uppercase tracking-[0.2em] text-xs transition-all active:scale-[0.98] group shadow-[0_0_20px_rgba(22,163,74,0.2)]"
+                <Link 
+                  href="/checkout"
+                  onClick={closeSidebar}
+                  className="w-full bg-red-600 hover:bg-red-500 text-white rounded-xl py-4 flex items-center justify-center gap-2 font-black uppercase tracking-[0.2em] text-xs transition-all active:scale-[0.98] group shadow-[0_0_20px_rgba(220,38,38,0.2)]"
                 >
-                  Order via WhatsApp <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </button>
+                  Proceed to Checkout <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
 
                 <p className="text-center text-[8px] font-black uppercase tracking-[0.2em] text-zinc-600 mt-4 italic">
                   Secure Checkout Powered by Urbanvein Core

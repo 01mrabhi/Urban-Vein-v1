@@ -11,7 +11,8 @@ import {
   CheckCircle2,
   Tag,
   MapPin,
-  Phone as PhoneIcon
+  Phone as PhoneIcon,
+  User
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useCart } from '../../context/CartContext';
@@ -30,9 +31,13 @@ export default function CheckoutPage() {
   const { showToast } = useToast();
 
   const [formData, setFormData] = useState({
-    address: '',
+    fullName: '',
     phone: '',
-    paymentMethod: 'card'
+    houseNumber: '',
+    streetName: '',
+    landmark: '',
+    pinCode: '',
+    paymentMethod: 'whatsapp'
   });
 
   const shipping = 69.00;
@@ -42,9 +47,25 @@ export default function CheckoutPage() {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+      
+      // Auto-fill from metadata if available
+      if (user?.user_metadata?.address_details) {
+        const addr = user.user_metadata.address_details;
+        setFormData(prev => ({
+          ...prev,
+          fullName: user.user_metadata.full_name || '',
+          phone: addr.phone || '',
+          houseNumber: addr.houseNumber || '',
+          streetName: addr.streetName || '',
+          landmark: addr.landmark || '',
+          pinCode: addr.pinCode || '',
+        }));
+      } else if (user?.user_metadata?.full_name) {
+        setFormData(prev => ({ ...prev, fullName: user.user_metadata.full_name }));
+      }
     };
     checkUser();
-  }, []);
+  }, [router]);
 
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,22 +80,25 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!formData.address || !formData.phone) {
-      showToast('Please fill in your shipping details', 'error');
+    const { fullName, phone, houseNumber, streetName, landmark, pinCode } = formData;
+    if (!fullName || !phone || !houseNumber || !streetName || !pinCode) {
+      showToast('Please fill in all mandatory shipping details', 'error');
       return;
     }
 
     setLoading(true);
 
     try {
+      const formattedAddress = `${houseNumber}, ${streetName}${landmark ? `, Near ${landmark}` : ''}, PIN: ${pinCode}`;
+
       // 1. Create the order
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           user_id: user.id,
           total_amount: total,
-          shipping_address: formData.address,
-          phone: formData.phone,
+          shipping_address: formattedAddress,
+          phone: phone,
           payment_method: formData.paymentMethod,
           status: 'pending'
         })
@@ -99,7 +123,46 @@ export default function CheckoutPage() {
 
       if (itemsError) throw itemsError;
 
-      // 3. Clear cart and redirect
+      // 3. Save address to user metadata for profile section
+      await supabase.auth.updateUser({
+        data: {
+          address_details: {
+            houseNumber,
+            streetName,
+            landmark,
+            pinCode,
+            phone
+          }
+        }
+      });
+
+      // 4. WhatsApp Checkout if selected
+      if (formData.paymentMethod === 'whatsapp') {
+        const adminPhone = "918264966094";
+        let message = `*NEW ORDER: ORD-${order.id.slice(0, 8).toUpperCase()}*\n\n`;
+        
+        message += `*CLIENT DETAILS:*\n`;
+        message += `Name: ${fullName}\n`;
+        message += `Phone: ${phone}\n\n`;
+        
+        message += `*SHIPPING ADDRESS:*\n`;
+        message += `${houseNumber}, ${streetName}\n`;
+        if (landmark) message += `Landmark: ${landmark}\n`;
+        message += `PIN Code: ${pinCode}\n\n`;
+        
+        message += `*ITEMS:*\n`;
+        items.forEach((item, index) => {
+          message += `${index + 1}. ${item.name} (${item.size}/${item.color}) x${item.quantity} - ₹${(item.price * item.quantity).toLocaleString()}\n`;
+        });
+        
+        message += `\n*TOTAL: ₹${total.toLocaleString()}*\n\n`;
+        message += `_Please share payment details to confirm._`;
+
+        const encodedMessage = encodeURIComponent(message);
+        window.open(`https://wa.me/${adminPhone}?text=${encodedMessage}`, '_blank');
+      }
+
+      // 5. Clear cart and redirect
       clearCart();
       showToast('Order placed successfully!', 'success');
       router.push('/success');
@@ -156,31 +219,83 @@ export default function CheckoutPage() {
               <div className="space-y-6">
                 <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Shipping Information</h2>
                 
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Delivery Address</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-4 top-4 text-zinc-700" size={18} />
-                    <textarea 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Client Name</label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700" size={18} />
+                      <input 
+                        required
+                        type="text" 
+                        placeholder="Alex Mercer"
+                        className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-12 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                        value={formData.fullName}
+                        onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Phone Number</label>
+                    <div className="relative">
+                      <PhoneIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700" size={18} />
+                      <input 
+                        required
+                        type="tel" 
+                        placeholder="+91 00000 00000"
+                        className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-12 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">House / Flat / Block No.</label>
+                    <input 
                       required
-                      placeholder="Street, City, State, ZIP"
-                      className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-12 py-4 text-sm focus:outline-none focus:border-red-600 transition-colors h-24"
-                      value={formData.address}
-                      onChange={(e) => setFormData({...formData, address: e.target.value})}
+                      type="text" 
+                      placeholder="e.g. A-123, 4th Floor"
+                      className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                      value={formData.houseNumber}
+                      onChange={(e) => setFormData({...formData, houseNumber: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Street Name / Area</label>
+                    <input 
+                      required
+                      type="text" 
+                      placeholder="e.g. Cyber City, Sector 24"
+                      className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                      value={formData.streetName}
+                      onChange={(e) => setFormData({...formData, streetName: e.target.value})}
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Phone Number</label>
-                  <div className="relative">
-                    <PhoneIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700" size={18} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Nearby Landmark (Optional)</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Near Metro Station"
+                      className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                      value={formData.landmark}
+                      onChange={(e) => setFormData({...formData, landmark: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">PIN Code</label>
                     <input 
                       required
-                      type="tel" 
-                      placeholder="+91 00000 00000"
-                      className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-12 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      type="text" 
+                      placeholder="000000"
+                      className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
+                      value={formData.pinCode}
+                      onChange={(e) => setFormData({...formData, pinCode: e.target.value})}
                     />
                   </div>
                 </div>
@@ -232,9 +347,9 @@ export default function CheckoutPage() {
               <button 
                 disabled={loading}
                 type="submit" 
-                className="w-full bg-red-600 disabled:bg-zinc-800 disabled:cursor-not-allowed text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-4 shadow-[0_20px_50px_rgba(220,38,38,0.3)] hover:scale-[1.02] active:scale-95 transition-all group"
+                className={`w-full ${formData.paymentMethod === 'whatsapp' ? 'bg-green-600 shadow-[0_20px_50px_rgba(22,163,74,0.3)]' : 'bg-red-600 shadow-[0_20px_50px_rgba(220,38,38,0.3)]'} disabled:bg-zinc-800 disabled:cursor-not-allowed text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all group`}
               >
-                {loading ? 'Processing...' : 'Complete Purchase'} 
+                {loading ? 'Processing...' : (formData.paymentMethod === 'whatsapp' ? 'Checkout via WhatsApp' : 'Complete Purchase')} 
                 {!loading && <ChevronRight size={20} className="group-hover:translate-x-2 transition-transform" />}
               </button>
               
