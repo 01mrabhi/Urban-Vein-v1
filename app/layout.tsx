@@ -13,8 +13,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'UrbanVein',
-  description: 'Streetwear custom print platform',
+  title: 'UrbanVein | Street Aesthetics',
+  description: 'Architecting the future of street aesthetics. High-grade fabrics. Zero Compromise.',
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 
 import { ToastProvider } from '../context/ToastContext';
