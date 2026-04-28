@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 export default function ProductSection() {
   const [products, setProducts] = useState<Product[]>(PRODUCTS);
   const [loading, setLoading] = useState(false);
-  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
+  const [activeCategory, setActiveCategory] = useState('All');
   const router = useRouter();
 
   useEffect(() => {
@@ -20,7 +20,11 @@ export default function ProductSection() {
     router.push(`/products/${product.id}`);
   };
 
-  const filteredProducts = products.filter(p => p.category === activeCategory);
+  const filteredProducts = activeCategory === 'All' 
+    ? products 
+    : products.filter(p => p.category === activeCategory);
+
+  const categoriesWithAll = ['All', ...CATEGORIES];
 
   return (
     <section id="shop" className="py-24 px-8 bg-zinc-950">
@@ -40,7 +44,7 @@ export default function ProductSection() {
 
         {/* Categories */}
         <div className="flex flex-wrap gap-4 mb-16">
-          {CATEGORIES.map((cat) => (
+          {categoriesWithAll.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}

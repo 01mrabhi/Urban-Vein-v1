@@ -70,13 +70,13 @@ export default function ProductCard({
         <div className="w-full h-full relative">
           {image_back && (
             <img 
-              src={image_back} 
-              alt={`${name} back`} 
+              src={image} 
+              alt={`${name} front`} 
               className="absolute inset-0 w-full h-full object-cover transition-all duration-700 lg:group-hover:scale-110 opacity-0 lg:group-hover:opacity-100" 
             />
           )}
           <img 
-            src={image} 
+            src={image_back || image} 
             alt={name} 
             className={`w-full h-full object-cover transition-all duration-700 lg:group-hover:scale-110 ${image_back ? 'lg:group-hover:opacity-0' : ''} absolute inset-0`} 
           />

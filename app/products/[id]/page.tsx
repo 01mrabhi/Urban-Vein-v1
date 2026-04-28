@@ -33,9 +33,34 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (product && !currentImage) {
-      setCurrentImage(product.image);
+      setCurrentImage(product.image_back || product.image);
     }
   }, [product, currentImage]);
+
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd || !product?.image_back) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe || isRightSwipe) {
+      setCurrentImage(prev => prev === product.image ? product.image_back : product.image);
+    }
+  };
 
   useEffect(() => {
     async function fetchProduct() {
@@ -126,13 +151,18 @@ export default function ProductDetailPage() {
           
           {/* Left: Image Gallery */}
           <div className="w-full lg:w-1/2 relative lg:sticky lg:top-32 flex flex-col gap-4">
-            <div className="group relative w-full h-auto aspect-[4/5] overflow-hidden rounded-[3rem] bg-zinc-900 border border-zinc-800">
+            <div 
+              className="group relative w-full h-auto aspect-[4/5] overflow-hidden rounded-[3rem] bg-zinc-900 border border-zinc-800"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
               <motion.img 
-                key={currentImage || product.image}
+                key={currentImage || (product.image_back || product.image)}
                 initial={{ opacity: 0, scale: 1.05 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
-                src={currentImage || product.image} 
+                src={currentImage || (product.image_back || product.image)} 
                 alt={product.name} 
                 className="w-full h-full object-cover lg:grayscale lg:hover:grayscale-0 transition-all duration-1000 group-hover:scale-105"
               />
@@ -144,22 +174,29 @@ export default function ProductDetailPage() {
                   </span>
                 </div>
               )}
+
+              {product.image_back && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10 lg:hidden bg-zinc-950/50 backdrop-blur-md px-3 py-1.5 rounded-full">
+                  <div className={`w-1.5 h-1.5 rounded-full transition-colors ${currentImage === product.image_back ? 'bg-white' : 'bg-white/30'}`}></div>
+                  <div className={`w-1.5 h-1.5 rounded-full transition-colors ${currentImage === product.image ? 'bg-white' : 'bg-white/30'}`}></div>
+                </div>
+              )}
             </div>
             
             {/* Thumbnails */}
             {product.image_back && (
-              <div className="flex gap-4 px-2">
-                <button 
-                  onClick={() => setCurrentImage(product.image)}
-                  className={`relative w-20 sm:w-24 h-28 sm:h-32 rounded-2xl overflow-hidden border-2 transition-all ${currentImage === product.image ? 'border-red-600' : 'border-zinc-800 hover:border-zinc-500'}`}
-                >
-                  <img src={product.image} alt="Front view" className="w-full h-full object-cover" />
-                </button>
+              <div className="hidden lg:flex gap-4 px-2">
                 <button 
                   onClick={() => setCurrentImage(product.image_back)}
                   className={`relative w-20 sm:w-24 h-28 sm:h-32 rounded-2xl overflow-hidden border-2 transition-all ${currentImage === product.image_back ? 'border-red-600' : 'border-zinc-800 hover:border-zinc-500'}`}
                 >
                   <img src={product.image_back} alt="Back view" className="w-full h-full object-cover" />
+                </button>
+                <button 
+                  onClick={() => setCurrentImage(product.image)}
+                  className={`relative w-20 sm:w-24 h-28 sm:h-32 rounded-2xl overflow-hidden border-2 transition-all ${currentImage === product.image ? 'border-red-600' : 'border-zinc-800 hover:border-zinc-500'}`}
+                >
+                  <img src={product.image} alt="Front view" className="w-full h-full object-cover" />
                 </button>
               </div>
             )}

@@ -172,7 +172,7 @@ export default function HelpPage() {
                     <label className="block text-[10px] font-black uppercase tracking-widest text-red-600 mb-2">Email Address</label>
                     <input 
                       type="email" 
-                      placeholder="nexus@urbanvein.com"
+                      placeholder="urbanvein10@gmail.com"
                       className="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-red-600 transition-colors"
                     />
                   </div>
