@@ -53,118 +53,120 @@ export default function Navbar() {
   const email = user?.email || '';
 
   return (
-    <nav className="fixed top-0 left-0 w-full flex items-center px-6 lg:px-8 py-4 lg:py-6 bg-zinc-950 border-b border-zinc-900 z-[100] backdrop-blur-md bg-zinc-950/80">
-      {/* Left Section: Logo */}
-      <div className="flex-1 flex items-center">
-        <Link href="/" className="flex items-center">
-          <img 
-            src="/products/Urban Vein logo.png" 
-            alt="UrbanVein Logo" 
-            className="h-8 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
-          />
-        </Link>
-      </div>
-
-      {/* Center Section: Navigation Links - Perfectly Centered */}
-      {!isCheckout ? (
-        <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-12">
-          <Link href="/#shop" className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-white transition-all hover:scale-110">Shop</Link>
-          <Link href="/help" className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all hover:scale-110 ${pathname === '/help' ? 'text-red-600' : 'text-zinc-400 hover:text-white'}`}>Support</Link>
-          <Link href="/lookbook" className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-white transition-all hover:scale-110">Lookbook</Link>
+    <>
+      <nav className="fixed top-0 left-0 w-full flex items-center px-6 lg:px-8 py-4 lg:py-6 bg-zinc-950 border-b border-zinc-900 z-[100] backdrop-blur-md bg-zinc-950/80">
+        {/* Left Section: Logo */}
+        <div className="flex-1 flex items-center">
+          <Link href="/" className="flex items-center">
+            <img 
+              src="/products/Urban Vein logo.png" 
+              alt="UrbanVein Logo" 
+              className="h-8 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+            />
+          </Link>
         </div>
-      ) : (
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 text-zinc-400 bg-zinc-900/50 px-4 py-2 rounded-xl border border-zinc-800">
-          <Lock size={14} className="text-red-600" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em]">Secure Checkout</span>
-        </div>
-      )}
 
-      {/* Right Section: Icons */}
-      {!isCheckout ? (
-        <div className="flex-1 flex items-center justify-end gap-4 lg:gap-6">
-          <button onClick={() => setIsSearchOpen(true)} className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all">
-            <Search size={20} />
-          </button>
-          <button onClick={openSidebar} className="relative w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors bg-zinc-900 rounded-xl border border-zinc-800 group">
-            <ShoppingBag size={18} />
-            <AnimatePresence mode="popLayout">
-              {cartCount > 0 && (
-                <motion.span 
-                  key={cartCount}
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="absolute -top-1 -right-1 min-w-[16px] h-[16px] bg-red-600 text-white text-[8px] font-black flex items-center justify-center rounded-full border-2 border-zinc-950 px-1"
-                >
-                  {cartCount}
-                </motion.span>
-              )}
-              {cartCount === 0 && (
-                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-600 rounded-full border-2 border-zinc-950"></span>
-              )}
-            </AnimatePresence>
-          </button>
-          
-          <div className="relative" ref={profileRef}>
-            {user ? (
-              <div 
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-zinc-800 flex items-center justify-center cursor-pointer hover:border-zinc-600 transition-all p-0.5"
-              >
-                <div className="w-full h-full rounded-full bg-zinc-900 overflow-hidden">
-                  <img 
-                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${fullName}&backgroundColor=b91c1c&fontFamily=Arial&fontWeight=700`} 
-                    alt="User" 
-                  />
-                </div>
-              </div>
-            ) : (
-              <Link 
-                href="/login"
-                className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all border border-zinc-900 hover:border-zinc-800"
-              >
-                <User size={20} />
-              </Link>
-            )}
-
-            <AnimatePresence>
-              {isProfileOpen && user && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 mt-3 w-56 bg-zinc-950/90 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden z-50"
-                >
-                  <div className="p-4 border-b border-zinc-800/50 bg-zinc-900/30">
-                    <p className="text-sm font-bold text-white tracking-wide truncate">{fullName}</p>
-                    <p className="text-xs text-zinc-500 font-medium mt-0.5 truncate">{email}</p>
-                  </div>
-                  <div className="p-2 flex flex-col gap-1">
-                    <Link onClick={() => setIsProfileOpen(false)} href="/#shop" className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-all">
-                      <ShoppingBag size={16} className="text-red-500" />
-                      <span className="font-semibold tracking-wide">Go to Shop</span>
-                    </Link>
-                    <Link onClick={() => setIsProfileOpen(false)} href="/profile" className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-all">
-                      <User size={16} />
-                      <span className="font-semibold tracking-wide">My Profile</span>
-                    </Link>
-                  </div>
-                  <div className="p-2 border-t border-zinc-800/50">
-                    <button onClick={handleSignOut} className="w-full flex items-center justify-between px-3 py-2 text-sm text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
-                      <span className="font-bold tracking-wide">Sign Out</span>
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+        {/* Center Section: Navigation Links - Perfectly Centered */}
+        {!isCheckout ? (
+          <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-12">
+            <Link href="/#shop" className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-white transition-all hover:scale-110">Shop</Link>
+            <Link href="/help" className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all hover:scale-110 ${pathname === '/help' ? 'text-red-600' : 'text-zinc-400 hover:text-white'}`}>Support</Link>
+            <Link href="/lookbook" className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-white transition-all hover:scale-110">Lookbook</Link>
           </div>
-          <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all">
-            <Menu size={20} />
-          </button>
-        </div>
-      ) : (
-        <div className="flex-1" />
-      )}
+        ) : (
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 text-zinc-400 bg-zinc-900/50 px-4 py-2 rounded-xl border border-zinc-800">
+            <Lock size={14} className="text-red-600" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Secure Checkout</span>
+          </div>
+        )}
+
+        {/* Right Section: Icons */}
+        {!isCheckout ? (
+          <div className="flex-1 flex items-center justify-end gap-4 lg:gap-6">
+            <button onClick={() => setIsSearchOpen(true)} className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all">
+              <Search size={20} />
+            </button>
+            <button onClick={openSidebar} className="relative w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors bg-zinc-900 rounded-xl border border-zinc-800 group">
+              <ShoppingBag size={18} />
+              <AnimatePresence mode="popLayout">
+                {cartCount > 0 && (
+                  <motion.span 
+                    key={cartCount}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="absolute -top-1 -right-1 min-w-[16px] h-[16px] bg-red-600 text-white text-[8px] font-black flex items-center justify-center rounded-full border-2 border-zinc-950 px-1"
+                  >
+                    {cartCount}
+                  </motion.span>
+                )}
+                {cartCount === 0 && (
+                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-600 rounded-full border-2 border-zinc-950"></span>
+                )}
+              </AnimatePresence>
+            </button>
+            
+            <div className="relative" ref={profileRef}>
+              {user ? (
+                <div 
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-zinc-800 flex items-center justify-center cursor-pointer hover:border-zinc-600 transition-all p-0.5"
+                >
+                  <div className="w-full h-full rounded-full bg-zinc-900 overflow-hidden">
+                    <img 
+                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${fullName}&backgroundColor=b91c1c&fontFamily=Arial&fontWeight=700`} 
+                      alt="User" 
+                    />
+                  </div>
+                </div>
+              ) : (
+                <Link 
+                  href="/login"
+                  className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all border border-zinc-900 hover:border-zinc-800"
+                >
+                  <User size={20} />
+                </Link>
+              )}
+
+              <AnimatePresence>
+                {isProfileOpen && user && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-3 w-56 bg-zinc-950/90 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden z-50"
+                  >
+                    <div className="p-4 border-b border-zinc-800/50 bg-zinc-900/30">
+                      <p className="text-sm font-bold text-white tracking-wide truncate">{fullName}</p>
+                      <p className="text-xs text-zinc-500 font-medium mt-0.5 truncate">{email}</p>
+                    </div>
+                    <div className="p-2 flex flex-col gap-1">
+                      <Link onClick={() => setIsProfileOpen(false)} href="/#shop" className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-all">
+                        <ShoppingBag size={16} className="text-red-500" />
+                        <span className="font-semibold tracking-wide">Go to Shop</span>
+                      </Link>
+                      <Link onClick={() => setIsProfileOpen(false)} href="/profile" className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-all">
+                        <User size={16} />
+                        <span className="font-semibold tracking-wide">My Profile</span>
+                      </Link>
+                    </div>
+                    <div className="p-2 border-t border-zinc-800/50">
+                      <button onClick={handleSignOut} className="w-full flex items-center justify-between px-3 py-2 text-sm text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
+                        <span className="font-bold tracking-wide">Sign Out</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all">
+              <Menu size={20} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex-1" />
+        )}
+      </nav>
 
       {/* Mobile Menu Modal */}
       <AnimatePresence>
@@ -174,7 +176,7 @@ export default function Navbar() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-[100] bg-zinc-950 flex flex-col pt-24 px-8 pb-12 overflow-y-auto"
+            className="fixed inset-0 z-[200] bg-zinc-950 flex flex-col pt-24 px-8 pb-12 overflow-y-auto"
           >
             <button 
               onClick={() => setIsMobileMenuOpen(false)}
@@ -226,7 +228,7 @@ export default function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[100] bg-zinc-950/80 backdrop-blur-md flex justify-center items-start pt-24 px-4"
+            className="fixed inset-0 z-[200] bg-zinc-950/80 backdrop-blur-md flex justify-center items-start pt-24 px-4"
             onClick={(e) => {
                if (e.target === e.currentTarget) setIsSearchOpen(false);
             }}
@@ -268,6 +270,6 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 }
