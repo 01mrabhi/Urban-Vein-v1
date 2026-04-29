@@ -3,13 +3,14 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Plus, Minus, Heart, Shield, Package, RefreshCw, ChevronDown, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Heart, Shield, Package, RefreshCw, ChevronDown, ShoppingBag, X } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '../../../context/CartContext';
 import { useWishlist } from '../../../context/WishlistContext';
 import { useToast } from '../../../context/ToastContext';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
+import { PRODUCTS } from '../../../lib/data';
 
 const SIZES = ['M', 'L', 'XL', 'XXL'];
 
@@ -30,6 +31,7 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [activeAccordion, setActiveAccordion] = useState<string | null>('details');
   const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [showSizeChart, setShowSizeChart] = useState(false);
 
   useEffect(() => {
     if (product && !currentImage) {
@@ -65,6 +67,16 @@ export default function ProductDetailPage() {
   useEffect(() => {
     async function fetchProduct() {
       setLoading(true);
+      
+      // Prioritize local data for consistency with data.ts updates
+      const localProduct = PRODUCTS.find(p => p.id === id);
+      if (localProduct) {
+        setProduct(localProduct);
+        setLoading(false);
+        return;
+      }
+
+      // Fallback to Supabase if not found locally
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -238,7 +250,12 @@ export default function ProductDetailPage() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xs font-black uppercase text-white tracking-[0.2em]">Select Size</h3>
-                  <button className="text-[10px] text-zinc-500 hover:text-white font-bold uppercase tracking-widest underline decoration-zinc-800 underline-offset-4 transition-colors">Size Guide</button>
+                  <button 
+                    onClick={() => setShowSizeChart(true)}
+                    className="text-[10px] text-zinc-500 hover:text-white font-bold uppercase tracking-widest underline decoration-zinc-800 underline-offset-4 transition-colors"
+                  >
+                    Size Guide
+                  </button>
                 </div>
                 <div className="flex flex-wrap gap-4">
                   {SIZES.map(size => (
@@ -327,9 +344,10 @@ export default function ProductDetailPage() {
                     >
                       <div className="p-6 text-xs text-zinc-400 font-bold uppercase tracking-widest leading-relaxed border-t border-zinc-900">
                         <ul className="space-y-4">
-                          <li className="flex gap-4 items-start"><span className="text-red-600 mt-0.5">■</span> Premium heavyweight blend. Pre-shrunk formulation.</li>
-                          <li className="flex gap-4 items-start"><span className="text-red-600 mt-0.5">■</span> Silicone washed for a brutalist, structured fall.</li>
-                          <li className="flex gap-4 items-start"><span className="text-red-600 mt-0.5">■</span> Architectural drop shoulders mapped for mobility.</li>
+                          <li className="flex gap-4 items-start"><span className="text-red-600 mt-0.5">■</span> Premium Cotton Lycra Fabric – 240 GSM</li>
+                          <li className="flex gap-4 items-start"><span className="text-red-600 mt-0.5">■</span> Soft, breathable, and stretchable for all-day comfort</li>
+                          <li className="flex gap-4 items-start"><span className="text-red-600 mt-0.5">■</span> High-quality fabric with a smooth and rich finish</li>
+                          <li className="flex gap-4 items-start"><span className="text-red-600 mt-0.5">■</span> Maintains shape and comfort even after multiple washes</li>
                         </ul>
                       </div>
                     </motion.div>
@@ -384,6 +402,68 @@ export default function ProductDetailPage() {
 
       </div>
       <Footer />
+
+      {/* Size Chart Modal */}
+      <AnimatePresence>
+        {showSizeChart && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-md"
+            onClick={() => setShowSizeChart(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2rem] max-w-md w-full relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setShowSizeChart(false)}
+                className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+              
+              <h3 className="text-xl font-black uppercase tracking-tight text-white mb-6 italic">// Size Chart (Inches)</h3>
+              
+              <div className="overflow-hidden rounded-2xl border border-zinc-800">
+                <table className="w-full text-left text-xs uppercase tracking-widest font-bold">
+                  <thead>
+                    <tr className="bg-zinc-800/50 text-zinc-400">
+                      <th className="p-4 border-b border-zinc-800">Size</th>
+                      <th className="p-4 border-b border-zinc-800">Chest</th>
+                      <th className="p-4 border-b border-zinc-800">Shoulder</th>
+                      <th className="p-4 border-b border-zinc-800">Length</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-zinc-300">
+                    {[
+                      { size: 'M', chest: '42', shoulder: '20.5', length: '27.5' },
+                      { size: 'L', chest: '44', shoulder: '21', length: '28' },
+                      { size: 'XL', chest: '46', shoulder: '21.5', length: '28.5' },
+                      { size: 'XXL', chest: '48', shoulder: '22', length: '29' },
+                    ].map((row) => (
+                      <tr key={row.size} className="hover:bg-zinc-800/30 transition-colors">
+                        <td className="p-4 border-b border-zinc-800 text-red-600 font-black">{row.size}</td>
+                        <td className="p-4 border-b border-zinc-800">{row.chest}</td>
+                        <td className="p-4 border-b border-zinc-800">{row.shoulder}</td>
+                        <td className="p-4 border-b border-zinc-800">{row.length}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              <p className="mt-6 text-[8px] text-zinc-500 font-black uppercase tracking-widest text-center">
+                * All measurements are in inches. Standard fit guaranteed.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

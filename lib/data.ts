@@ -21,7 +21,7 @@ export const PRODUCTS: Product[] = [
   {
     id: '5',
     name: 'CSK Edition Tee',
-    price: '₹499.00',
+    price: '₹549.00',
     description: '“Roar of Champions” Captures the lion’s aggression and the winning legacy feel.',
     image: '/products/csk_front.jpg',
     image_back: '/products/csk_back.jpg',

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { EyeOff, Eye, Apple, Facebook, Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
-import { supabase } from '../../lib/supabase';
+import { supabase, getURL } from '../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '../../context/ToastContext';
 
@@ -131,7 +131,7 @@ export default function LoginPage() {
             <div className="flex justify-center gap-4">
               <button 
                 onClick={async () => {
-                  const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+                  const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: getURL() } });
                   if (error) showToast(error.message, 'error');
                 }}
                 className="w-12 h-12 rounded-full bg-[#1a1a1a] flex items-center justify-center hover:bg-zinc-800 hover:scale-105 transition-all border border-zinc-800"
@@ -145,7 +145,7 @@ export default function LoginPage() {
               </button>
               <button 
                 onClick={async () => {
-                  const { error } = await supabase.auth.signInWithOAuth({ provider: 'facebook', options: { redirectTo: window.location.origin } });
+                  const { error } = await supabase.auth.signInWithOAuth({ provider: 'facebook', options: { redirectTo: getURL() } });
                   if (error) showToast(error.message, 'error');
                 }}
                 className="w-12 h-12 rounded-full bg-[#1a1a1a] flex items-center justify-center hover:bg-zinc-800 hover:scale-105 transition-all text-blue-500 border border-zinc-800"

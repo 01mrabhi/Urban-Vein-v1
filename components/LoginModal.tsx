@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { EyeOff, Eye, Mail, Lock, X, Apple, Facebook } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { supabase } from '../lib/supabase';
+import { supabase, getURL } from '../lib/supabase';
 import { useToast } from '../context/ToastContext';
 import { useRouter } from 'next/navigation';
 
@@ -46,7 +46,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: getURL(),
         },
       });
       if (error) throw error;
@@ -60,7 +60,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: getURL(),
         },
       });
       if (error) throw error;

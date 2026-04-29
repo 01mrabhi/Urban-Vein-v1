@@ -52,6 +52,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
   const { addToCart } = useCart();
   const { isLiked, toggleLike } = useWishlist();
 
+  const [showSizeChart, setShowSizeChart] = useState(false);
   const liked = product ? isLiked(product.id) : false;
 
   if (!product) return null;
@@ -178,7 +179,12 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                 <section>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Select Size</h3>
-                    <button className="text-[8px] font-black uppercase tracking-widest text-zinc-600 hover:text-white underline decoration-zinc-800">Size Guide</button>
+                    <button 
+                      onClick={() => setShowSizeChart(true)}
+                      className="text-[8px] font-black uppercase tracking-widest text-zinc-600 hover:text-white underline decoration-zinc-800"
+                    >
+                      Size Guide
+                    </button>
                   </div>
                   <div className="grid grid-cols-5 gap-3">
                     {SIZES.map((size) => (
@@ -235,10 +241,10 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
 
                   <div className="grid grid-cols-2 gap-4">
                     {[
-                      { label: 'MATERIAL', value: '100% Heavyweight Cotton' },
-                      { label: 'WEIGHT', value: '300GSM Premium Fabric' },
-                      { label: 'FINISH', value: 'Pre-shrunk Silicone Wash' },
-                      { label: 'ORIGIN', value: 'Ethically Made in Japan' },
+                      { label: 'MATERIAL', value: 'Cotton Lycra Blend' },
+                      { label: 'WEIGHT', value: '240 GSM Premium Fabric' },
+                      { label: 'FINISH', value: 'Smooth & Rich Finish' },
+                      { label: 'DURABILITY', value: 'Maintains Shape Post-Wash' },
                     ].map((spec, i) => (
                       <div key={spec.label} className="bg-zinc-900/50 border border-zinc-900/50 p-5 rounded-3xl group hover:border-zinc-800 transition-colors">
                         <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-2">{spec.label}</p>
@@ -273,6 +279,68 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                   </div>
                 </section>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Size Chart Modal */}
+      <AnimatePresence>
+        {showSizeChart && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-md"
+            onClick={() => setShowSizeChart(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2rem] max-w-md w-full relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setShowSizeChart(false)}
+                className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+              
+              <h3 className="text-xl font-black uppercase tracking-tight text-white mb-6 italic">// Size Chart (Inches)</h3>
+              
+              <div className="overflow-hidden rounded-2xl border border-zinc-800">
+                <table className="w-full text-left text-xs uppercase tracking-widest font-bold">
+                  <thead>
+                    <tr className="bg-zinc-800/50 text-zinc-400">
+                      <th className="p-4 border-b border-zinc-800">Size</th>
+                      <th className="p-4 border-b border-zinc-800">Chest</th>
+                      <th className="p-4 border-b border-zinc-800">Shoulder</th>
+                      <th className="p-4 border-b border-zinc-800">Length</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-zinc-300">
+                    {[
+                      { size: 'M', chest: '42', shoulder: '20.5', length: '27.5' },
+                      { size: 'L', chest: '44', shoulder: '21', length: '28' },
+                      { size: 'XL', chest: '46', shoulder: '21.5', length: '28.5' },
+                      { size: 'XXL', chest: '48', shoulder: '22', length: '29' },
+                    ].map((row) => (
+                      <tr key={row.size} className="hover:bg-zinc-800/30 transition-colors">
+                        <td className="p-4 border-b border-zinc-800 text-red-600 font-black">{row.size}</td>
+                        <td className="p-4 border-b border-zinc-800">{row.chest}</td>
+                        <td className="p-4 border-b border-zinc-800">{row.shoulder}</td>
+                        <td className="p-4 border-b border-zinc-800">{row.length}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              <p className="mt-6 text-[8px] text-zinc-500 font-black uppercase tracking-widest text-center">
+                * All measurements are in inches. Standard fit guaranteed.
+              </p>
             </motion.div>
           </motion.div>
         )}

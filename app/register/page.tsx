@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { EyeOff, Eye, ShieldCheck, Mail, User, Phone } from 'lucide-react';
 import Link from 'next/link';
-import { supabase } from '../../lib/supabase';
+import { supabase, getURL } from '../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '../../context/ToastContext';
 
@@ -27,6 +27,7 @@ export default function RegisterPage() {
         email: formData.email,
         password: formData.password,
         options: {
+          emailRedirectTo: `${getURL()}/auth/callback`,
           data: {
             full_name: formData.fullName,
           }
@@ -35,7 +36,7 @@ export default function RegisterPage() {
 
       if (error) throw error;
 
-      showToast('Registration successful!', 'success');
+      showToast('Registration successful! Please check your email for confirmation.', 'success');
       router.push('/');
     } catch (error: any) {
       showToast(error.message || 'Failed to register', 'error');
@@ -166,7 +167,7 @@ export default function RegisterPage() {
             <div className="flex justify-center gap-4">
               <button 
                 onClick={async () => {
-                  const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+                  const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: getURL() } });
                   if (error) showToast(error.message, 'error');
                 }}
                 className="w-12 h-12 rounded-full bg-[#1a1a1a] flex items-center justify-center hover:bg-zinc-800 hover:scale-105 transition-all border border-zinc-800"
@@ -180,7 +181,7 @@ export default function RegisterPage() {
               </button>
               <button 
                 onClick={async () => {
-                  const { error } = await supabase.auth.signInWithOAuth({ provider: 'facebook', options: { redirectTo: window.location.origin } });
+                  const { error } = await supabase.auth.signInWithOAuth({ provider: 'facebook', options: { redirectTo: getURL() } });
                   if (error) showToast(error.message, 'error');
                 }}
                 className="w-12 h-12 rounded-full bg-[#1a1a1a] flex items-center justify-center hover:bg-zinc-800 hover:scale-105 transition-all text-blue-500 border border-zinc-800"
