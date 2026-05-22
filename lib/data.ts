@@ -62,5 +62,40 @@ export const PRODUCTS: Product[] = [
     image: '/products/zoro_front.jpg',
     image_back: '/products/zoro_back.jpg',
     category: 'Graphic Series'
+  },
+  {
+    id: '6',
+    name: 'GOAT Tee',
+    price: '₹500.00',
+    description: 'More than a number. It’s a legacy of grit, passion, and chasing down the impossible. Rep the king with the Forever 18 tee.',
+    image: '/products/vk_forever_front.jpg',
+    image_back: '/products/vk_forever_back.jpg',
+    category: 'Graphic Series'
+  },
+  {
+    id: '7',
+    name: 'Thala Tshirt',
+    price: '₹500.00',
+    description: '"Thala for a reason." The man. The myth. The jersey. Level up your match-day fit or your everyday streetwear with our exclusive MS Dhoni tribute tee. Click the link to secure yours before they sell out!',
+    image: '/products/dhoni_front.jpg',
+    image_back: '/products/dhoni_back.jpg',
+    category: 'Graphic Series'
+  },
+  {
+    id: '8',
+    name: 'Thala Last Ride',
+    price: '₹500.00',
+    description: 'Defending the Legacy. Built for the fans who know that some legends never fade. This premium heavy-print tee is designed for the true CSK and Dhoni loyalists. Sleek, sharp, and unmistakably Thala. Drop a if you’re rocking the 7 this season. Available now!',
+    image: '/products/dhoni_white_front.jpg',
+    image_back: '/products/dhoni_white_back.jpg',
+    category: 'Oversized Collection'
+  },
+  {
+    id: '9',
+    name: 'Play Bold Tee',
+    price: '₹500.00',
+    description: 'Form is temporary, but the love for the Challengers is permanent. Rep the red and gold in style this season.',
+    image: '/products/rcb_design.jpg',
+    category: 'Limited Drops'
   }
 ];
