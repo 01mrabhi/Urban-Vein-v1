@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import LoginModal from '../../components/LoginModal';
@@ -128,8 +129,14 @@ export default function CartPage() {
                     className="group relative flex flex-col md:flex-row gap-8 bg-zinc-900/30 border border-zinc-900/50 p-8 rounded-[2.5rem] hover:border-zinc-800 transition-all hover:bg-zinc-900/50"
                   >
                     {/* Item Image */}
-                    <div className="w-full md:w-48 aspect-[4/5] bg-zinc-950 rounded-3xl overflow-hidden flex-shrink-0 border border-zinc-900">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                    <div className="relative w-full md:w-48 aspect-[4/5] bg-zinc-950 rounded-3xl overflow-hidden flex-shrink-0 border border-zinc-900">
+                      <Image 
+                        src={item.image} 
+                        alt={item.name} 
+                        fill
+                        sizes="(max-width: 768px) 100vw, 192px"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                      />
                     </div>
 
                     {/* Item Info */}

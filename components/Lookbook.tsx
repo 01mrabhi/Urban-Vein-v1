@@ -3,6 +3,8 @@ import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'motion/react';
 import { ArrowUpRight, Sparkles, ShoppingBag, Plus } from 'lucide-react';
 
+import Image from 'next/image';
+
 const LOOKS = [
   { 
     id: 1, 
@@ -56,9 +58,11 @@ export default function Lookbook() {
               <motion.div 
                 className="relative w-full md:w-2/3 aspect-[3/4] rounded-[4rem] overflow-hidden group cursor-crosshair border border-zinc-900 bg-zinc-900 shadow-2xl"
               >
-                <img 
+                <Image 
                   src={look.image} 
                   alt={look.title} 
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 50vw"
                   className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105" 
                 />
                 

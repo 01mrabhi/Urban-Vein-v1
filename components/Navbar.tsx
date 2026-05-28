@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ShoppingBag, User, Search, Menu, Lock, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { useCart } from '../context/CartContext';
@@ -58,9 +59,12 @@ export default function Navbar() {
         {/* Left Section: Logo */}
         <div className="flex-1 flex items-center">
           <Link href="/" className="flex items-center">
-            <img 
+            <Image 
               src="/products/Urban Vein logo.png" 
               alt="UrbanVein Logo" 
+              width={128}
+              height={32}
+              priority
               className="h-8 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
             />
           </Link>
@@ -112,9 +116,13 @@ export default function Navbar() {
                   className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-zinc-800 flex items-center justify-center cursor-pointer hover:border-zinc-600 transition-all p-0.5"
                 >
                   <div className="w-full h-full rounded-full bg-zinc-900 overflow-hidden">
-                    <img 
+                    <Image 
                       src={`https://api.dicebear.com/7.x/initials/svg?seed=${fullName}&backgroundColor=b91c1c&fontFamily=Arial&fontWeight=700`} 
                       alt="User" 
+                      width={36}
+                      height={36}
+                      unoptimized
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 </div>

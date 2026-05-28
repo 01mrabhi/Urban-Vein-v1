@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '../../context/ToastContext';
 import LoginModal from '../../components/LoginModal';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
@@ -312,8 +313,14 @@ export default function CheckoutPage() {
               <div className="space-y-4 mb-10 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {items.map((item) => (
                   <div key={item.cartItemId} className="flex items-center gap-6 p-4 rounded-2xl bg-zinc-950/50 border border-zinc-900">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 flex-shrink-0">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 flex-shrink-0">
+                      <Image 
+                        src={item.image} 
+                        alt={item.name} 
+                        fill
+                        sizes="64px"
+                        className="w-full h-full object-cover" 
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-[11px] font-black uppercase tracking-widest mb-0.5 truncate">{item.name}</h3>

@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { X, ShoppingCart, Minus, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function CartSidebar() {
   const { 
@@ -90,8 +91,14 @@ export default function CartSidebar() {
                 items.map((item) => (
                   <div key={item.cartItemId} className="flex gap-4 relative group">
                     {/* Image */}
-                    <div className="w-20 h-24 bg-zinc-900 rounded-xl overflow-hidden flex-shrink-0 border border-zinc-800">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <div className="relative w-20 h-24 bg-zinc-900 rounded-xl overflow-hidden flex-shrink-0 border border-zinc-800">
+                      <Image 
+                        src={item.image} 
+                        alt={item.name} 
+                        fill
+                        sizes="80px"
+                        className="w-full h-full object-cover" 
+                      />
                     </div>
 
                     {/* Info */}

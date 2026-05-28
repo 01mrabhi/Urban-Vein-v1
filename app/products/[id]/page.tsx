@@ -5,6 +5,7 @@ import Footer from '../../../components/Footer';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Plus, Minus, Heart, Shield, Package, RefreshCw, ChevronDown, ShoppingBag, X } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCart } from '../../../context/CartContext';
 import { useWishlist } from '../../../context/WishlistContext';
 import { useToast } from '../../../context/ToastContext';
@@ -169,15 +170,22 @@ export default function ProductDetailPage() {
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
-              <motion.img 
+              <motion.div 
                 key={currentImage || (product.image_back || product.image)}
                 initial={{ opacity: 0, scale: 1.05 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
-                src={currentImage || (product.image_back || product.image)} 
-                alt={product.name} 
-                className="w-full h-full object-cover lg:grayscale lg:hover:grayscale-0 transition-all duration-1000 group-hover:scale-105"
-              />
+                className="w-full h-full relative"
+              >
+                <Image 
+                  src={currentImage || (product.image_back || product.image)} 
+                  alt={product.name} 
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  priority
+                  className="w-full h-full object-cover lg:grayscale lg:hover:grayscale-0 transition-all duration-1000 group-hover:scale-105"
+                />
+              </motion.div>
               
               {product.badge && (
                 <div className="absolute top-8 left-8 z-10">
@@ -202,13 +210,25 @@ export default function ProductDetailPage() {
                   onClick={() => setCurrentImage(product.image_back)}
                   className={`relative w-20 sm:w-24 h-28 sm:h-32 rounded-2xl overflow-hidden border-2 transition-all ${currentImage === product.image_back ? 'border-red-600' : 'border-zinc-800 hover:border-zinc-500'}`}
                 >
-                  <img src={product.image_back} alt="Back view" className="w-full h-full object-cover" />
+                  <Image 
+                    src={product.image_back} 
+                    alt="Back view" 
+                    fill
+                    sizes="96px"
+                    className="w-full h-full object-cover" 
+                  />
                 </button>
                 <button 
                   onClick={() => setCurrentImage(product.image)}
                   className={`relative w-20 sm:w-24 h-28 sm:h-32 rounded-2xl overflow-hidden border-2 transition-all ${currentImage === product.image ? 'border-red-600' : 'border-zinc-800 hover:border-zinc-500'}`}
                 >
-                  <img src={product.image} alt="Front view" className="w-full h-full object-cover" />
+                  <Image 
+                    src={product.image} 
+                    alt="Front view" 
+                    fill
+                    sizes="96px"
+                    className="w-full h-full object-cover" 
+                  />
                 </button>
               </div>
             )}

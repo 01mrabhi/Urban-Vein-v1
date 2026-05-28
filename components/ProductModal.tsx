@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { 
   X, 
   ShoppingCart, 
@@ -128,18 +129,30 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                      <span className="bg-red-600 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full">LIMITED DROP</span>
                   </div>
                   
-                  <motion.img 
+                  <motion.div 
                     layoutId={`product-image-${product.id}`}
-                    src={product.image} 
-                    alt={product.name} 
-                    className="max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
-                  />
+                    className="w-full h-full relative flex items-center justify-center"
+                  >
+                    <Image 
+                      src={product.image} 
+                      alt={product.name} 
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      className="object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
+                    />
+                  </motion.div>
 
                   {/* Thumbnail selector */}
                   <div className="absolute bottom-4 flex gap-4">
                     {[1, 2, 3].map((_, i) => (
-                      <div key={i} className={`w-16 h-16 rounded-2xl bg-zinc-950 border ${i === 0 ? 'border-red-600' : 'border-zinc-800'} overflow-hidden cursor-pointer hover:border-zinc-600 transition-all`}>
-                         <img src={product.image} className="w-full h-full object-cover opacity-50 hover:opacity-100" alt="thumbnail" />
+                      <div key={i} className={`relative w-16 h-16 rounded-2xl bg-zinc-950 border ${i === 0 ? 'border-red-600' : 'border-zinc-800'} overflow-hidden cursor-pointer hover:border-zinc-600 transition-all`}>
+                         <Image 
+                           src={product.image} 
+                           fill
+                           sizes="64px"
+                           className="w-full h-full object-cover opacity-50 hover:opacity-100" 
+                           alt="thumbnail" 
+                         />
                       </div>
                     ))}
                      <div className="w-16 h-16 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-red-600 cursor-pointer hover:bg-zinc-900 transition-all">
@@ -269,8 +282,14 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                   <div className="grid grid-cols-2 gap-6">
                     {RECOMMENDED.map((item) => (
                       <div key={item.id} className="group cursor-pointer">
-                        <div className="aspect-[4/5] rounded-3xl bg-zinc-900 overflow-hidden mb-4 border border-zinc-900 hover:border-zinc-800 transition-all">
-                          <img src={item.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={item.name} />
+                        <div className="relative aspect-[4/5] rounded-3xl bg-zinc-900 overflow-hidden mb-4 border border-zinc-900 hover:border-zinc-800 transition-all">
+                          <Image 
+                            src={item.image} 
+                            alt={item.name} 
+                            fill
+                            sizes="180px"
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                          />
                         </div>
                         <h4 className="text-[10px] font-black uppercase tracking-tight mb-1">{item.name}</h4>
                         <p className="text-[10px] font-black text-red-600">{item.price}</p>
