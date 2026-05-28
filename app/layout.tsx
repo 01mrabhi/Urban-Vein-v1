@@ -25,6 +25,7 @@ import { ToastProvider } from '../context/ToastContext';
 import { CartProvider } from '../context/CartContext';
 import { WishlistProvider } from '../context/WishlistContext';
 import CartSidebar from '../components/CartSidebar';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
@@ -35,6 +36,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
             <ToastProvider>
               {children}
               <CartSidebar />
+              <Analytics />
             </ToastProvider>
           </CartProvider>
         </WishlistProvider>
