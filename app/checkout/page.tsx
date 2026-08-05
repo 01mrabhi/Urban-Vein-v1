@@ -4,18 +4,19 @@ import Navbar from '../../components/Navbar';
 import { 
   PhoneIcon, 
   ChevronRight, 
-  Trash2, 
-  MapPin, 
   ShieldCheck, 
   User,
-  ShoppingBag,
-  ArrowLeft
+  CreditCard,
+  MessageSquare,
+  CheckCircle2,
+  Lock
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useCart } from '../../context/CartContext';
 import { supabase } from '../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '../../context/ToastContext';
+import { useRazorpay } from '../../hooks/useRazorpay';
 import LoginModal from '../../components/LoginModal';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -27,6 +28,7 @@ export default function CheckoutPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const router = useRouter();
   const { showToast } = useToast();
+  const { isLoaded: isRazorpayLoaded } = useRazorpay();
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -35,7 +37,7 @@ export default function CheckoutPage() {
     streetName: '',
     landmark: '',
     pinCode: '',
-    paymentMethod: 'whatsapp'
+    paymentMethod: 'razorpay' // Default to Razorpay
   });
 
   const shipping = 69.00;
@@ -89,7 +91,7 @@ export default function CheckoutPage() {
     try {
       const formattedAddress = `${houseNumber}, ${streetName}${landmark ? `, Near ${landmark}` : ''}, PIN: ${pinCode}`;
 
-      // 1. Create the order
+      // 1. Create the order in Supabase DB
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -98,7 +100,8 @@ export default function CheckoutPage() {
           shipping_address: formattedAddress,
           phone: phone,
           payment_method: formData.paymentMethod,
-          status: 'pending'
+          status: 'pending',
+          payment_status: 'pending'
         })
         .select()
         .single();
@@ -121,7 +124,7 @@ export default function CheckoutPage() {
 
       if (itemsError) throw itemsError;
 
-      // 3. Save address to user metadata for profile section
+      // 3. Save address to user metadata
       await supabase.auth.updateUser({
         data: {
           address_details: {
@@ -134,8 +137,97 @@ export default function CheckoutPage() {
         }
       });
 
-      // 4. WhatsApp Checkout if selected
-      if (formData.paymentMethod === 'whatsapp') {
+      // 4. Handle Selected Payment Method
+      if (formData.paymentMethod === 'razorpay') {
+        if (!isRazorpayLoaded) {
+          showToast('Razorpay payment gateway loading... Please try again in a moment.', 'info');
+          setLoading(false);
+          return;
+        }
+
+        // Call backend API to create Razorpay Order
+        const apiRes = await fetch('/api/razorpay/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: order.id,
+            amount: total
+          })
+        });
+
+        const resData = await apiRes.json();
+
+        if (!apiRes.ok || !resData.razorpayOrderId) {
+          throw new Error(resData.error || 'Failed to initialize Razorpay payment');
+        }
+
+        // Open Razorpay Checkout Modal
+        const options = {
+          key: resData.keyId,
+          amount: resData.amount,
+          currency: resData.currency,
+          name: "URBAN VEIN",
+          description: `Order #${order.id.slice(0, 8).toUpperCase()}`,
+          image: "/icon.png",
+          order_id: resData.razorpayOrderId,
+          prefill: {
+            name: fullName,
+            email: user.email,
+            contact: phone
+          },
+          notes: {
+            order_id: order.id
+          },
+          theme: {
+            color: "#dc2626"
+          },
+          handler: async function (response: any) {
+            try {
+              // Verify Cryptographic Signature on Server
+              const verifyRes = await fetch('/api/razorpay/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  order_id: order.id
+                })
+              });
+
+              const verifyData = await verifyRes.json();
+
+              if (verifyRes.ok && verifyData.success) {
+                clearCart();
+                showToast('Payment successful! Order placed.', 'success');
+                router.push(`/success?order_id=${order.id}&payment_id=${response.razorpay_payment_id}`);
+              } else {
+                showToast(verifyData.error || 'Payment verification failed', 'error');
+                setLoading(false);
+              }
+            } catch (err: any) {
+              console.error('Verification error:', err);
+              showToast('Error verifying payment. Please contact support.', 'error');
+              setLoading(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              showToast('Payment process was cancelled', 'info');
+              setLoading(false);
+            }
+          }
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (response: any) {
+          console.error('Payment failed:', response.error);
+          showToast(`Payment failed: ${response.error.description || 'Transaction declined'}`, 'error');
+          setLoading(false);
+        });
+        rzp.open();
+
+      } else if (formData.paymentMethod === 'whatsapp') {
         const adminPhone = "918264966094";
         let message = `*NEW ORDER: ORD-${order.id.slice(0, 8).toUpperCase()}*\n\n`;
         
@@ -158,15 +250,14 @@ export default function CheckoutPage() {
 
         const encodedMessage = encodeURIComponent(message);
         window.open(`https://wa.me/${adminPhone}?text=${encodedMessage}`, '_blank');
+
+        clearCart();
+        showToast('Order submitted via WhatsApp!', 'success');
+        router.push('/success');
       }
 
-      // 5. Clear cart and redirect
-      clearCart();
-      showToast('Order placed successfully!', 'success');
-      router.push('/success');
     } catch (error: any) {
       showToast(error.message || 'Failed to place order', 'error');
-    } finally {
       setLoading(false);
     }
   };
@@ -182,8 +273,8 @@ export default function CheckoutPage() {
           <div className="lg:col-span-7 space-y-12">
             <header>
               <div className="flex items-center gap-3 text-zinc-500 mb-4">
-                <ShieldCheck size={14} />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Secure Checkout</span>
+                <ShieldCheck size={14} className="text-red-600" />
+                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Encrypted Checkout</span>
               </div>
               <h1 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter mb-4">Secure Payment</h1>
               <p className="text-red-500 font-bold uppercase tracking-[0.2em] text-xs">Complete your digital identity</p>
@@ -279,6 +370,64 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {/* Payment Method Selector */}
+              <div className="space-y-4 pt-4">
+                <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Select Payment Method</h2>
+                
+                {/* Razorpay Option */}
+                <div 
+                  onClick={() => setFormData({ ...formData, paymentMethod: 'razorpay' })}
+                  className={`cursor-pointer p-6 rounded-3xl border transition-all duration-300 ${
+                    formData.paymentMethod === 'razorpay' 
+                      ? 'bg-zinc-900/80 border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.15)]' 
+                      : 'bg-zinc-950/40 border-zinc-900 hover:border-zinc-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-2xl ${formData.paymentMethod === 'razorpay' ? 'bg-red-600 text-white' : 'bg-zinc-900 text-zinc-400'}`}>
+                        <CreditCard size={22} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-black text-sm uppercase tracking-wider">Online Payment (Razorpay)</h3>
+                          <span className="bg-red-950/80 text-red-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border border-red-900/50">Fast & Secure</span>
+                        </div>
+                        <p className="text-xs text-zinc-500 font-medium mt-1">UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, NetBanking, Wallets</p>
+                      </div>
+                    </div>
+                    {formData.paymentMethod === 'razorpay' && (
+                      <CheckCircle2 size={22} className="text-red-600 flex-shrink-0" />
+                    )}
+                  </div>
+                </div>
+
+                {/* WhatsApp Option */}
+                <div 
+                  onClick={() => setFormData({ ...formData, paymentMethod: 'whatsapp' })}
+                  className={`cursor-pointer p-6 rounded-3xl border transition-all duration-300 ${
+                    formData.paymentMethod === 'whatsapp' 
+                      ? 'bg-zinc-900/80 border-green-600 shadow-[0_0_30px_rgba(22,163,74,0.15)]' 
+                      : 'bg-zinc-950/40 border-zinc-900 hover:border-zinc-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-2xl ${formData.paymentMethod === 'whatsapp' ? 'bg-green-600 text-white' : 'bg-zinc-900 text-zinc-400'}`}>
+                        <MessageSquare size={22} />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-sm uppercase tracking-wider">Checkout via WhatsApp</h3>
+                        <p className="text-xs text-zinc-500 font-medium mt-1">Place order directly with support & receive manual payment options</p>
+                      </div>
+                    </div>
+                    {formData.paymentMethod === 'whatsapp' && (
+                      <CheckCircle2 size={22} className="text-green-600 flex-shrink-0" />
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center gap-3">
                 <input type="checkbox" id="save-address" className="w-5 h-5 accent-red-600 rounded-md bg-zinc-900 border-zinc-800" defaultChecked />
                 <label htmlFor="save-address" className="text-xs text-zinc-500 font-bold tracking-tight">Save this address to my profile for future orders</label>
@@ -289,12 +438,21 @@ export default function CheckoutPage() {
                 type="submit" 
                 className={`w-full ${formData.paymentMethod === 'whatsapp' ? 'bg-green-600 shadow-[0_20px_50px_rgba(22,163,74,0.3)]' : 'bg-red-600 shadow-[0_20px_50px_rgba(220,38,38,0.3)]'} disabled:bg-zinc-800 disabled:cursor-not-allowed text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all group`}
               >
-                {loading ? 'Processing...' : (formData.paymentMethod === 'whatsapp' ? 'Checkout via WhatsApp' : 'Complete Purchase')} 
-                {!loading && <ChevronRight size={20} className="group-hover:translate-x-2 transition-transform" />}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
+                    Processing...
+                  </span>
+                ) : (
+                  <>
+                    {formData.paymentMethod === 'whatsapp' ? 'Checkout via WhatsApp' : `Pay ₹${total.toLocaleString()} with Razorpay`} 
+                    <ChevronRight size={20} className="group-hover:translate-x-2 transition-transform" />
+                  </>
+                )}
               </button>
               
               <div className="flex items-center justify-center gap-2 text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
-                <ShieldCheck size={12} className="text-green-600" />
+                <Lock size={12} className="text-red-600" />
                 Encrypted & Secure 256-bit SSL Connection
               </div>
             </form>
