@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { User, Package, MapPin, Settings, Mail, Phone, Shield, ExternalLink, Camera, LogOut } from 'lucide-react';
+import { User, Package, MapPin, Settings, Mail, Shield, ExternalLink, Camera, LogOut, ChevronDown, ChevronUp, CreditCard, Truck, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
@@ -19,6 +19,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const router = useRouter();
   const { showToast } = useToast();
 
@@ -55,6 +56,10 @@ export default function ProfilePage() {
     router.push('/');
   };
 
+  const toggleExpandOrder = (orderId: string) => {
+    setExpandedOrderId(prev => prev === orderId ? null : orderId);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -65,6 +70,7 @@ export default function ProfilePage() {
 
   const fullName = user?.user_metadata?.full_name || 'Urban Explorer';
   const email = user?.email;
+  const initial = fullName ? fullName.charAt(0).toUpperCase() : 'U';
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] pt-24 pb-12 px-4 selection:bg-red-600/30">
@@ -93,13 +99,15 @@ export default function ProfilePage() {
               <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               
               <div className="relative z-10 flex flex-col items-center">
-                <div className="w-24 h-24 rounded-full bg-zinc-900 border-2 border-zinc-800 p-1 mb-4 relative cursor-pointer group/avatar">
-                  <div className="w-full h-full rounded-full overflow-hidden relative">
-                    <img 
-                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${fullName}&backgroundColor=b91c1c&fontFamily=Arial&fontWeight=700`} 
-                      alt="User Avatar" 
-                      className="w-full h-full object-cover"
-                    />
+                <div 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    showToast('Avatar customization coming soon!', 'info');
+                  }}
+                  className="w-24 h-24 rounded-full bg-zinc-900 border-2 border-red-600/50 p-1 mb-4 relative cursor-pointer group/avatar shadow-[0_0_20px_rgba(220,38,38,0.2)]"
+                >
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center text-white font-black text-3xl shadow-inner relative overflow-hidden">
+                    {initial}
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
                       <Camera className="text-white w-6 h-6" />
                     </div>
@@ -210,37 +218,130 @@ export default function ProfilePage() {
 
                   <div className="space-y-4">
                     {orders.length > 0 ? (
-                      orders.map(order => (
-                        <div key={order.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition-colors">
-                          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                            <div>
-                              <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest mb-1">
-                                {new Date(order.created_at).toLocaleDateString('en-IN', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric'
-                                })}
-                              </p>
-                              <p className="text-white font-bold tracking-wide">ORD-{order.id.slice(0, 8).toUpperCase()}</p>
+                      orders.map(order => {
+                        const isExpanded = expandedOrderId === order.id;
+                        return (
+                          <div key={order.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition-colors">
+                            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                              <div>
+                                <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest mb-1">
+                                  {new Date(order.created_at).toLocaleDateString('en-IN', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                  })}
+                                </p>
+                                <p className="text-white font-bold tracking-wide">ORD-{order.id.slice(0, 8).toUpperCase()}</p>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <span className="text-sm font-bold text-white">₹{order.total_amount.toLocaleString()} <span className="text-zinc-500 text-xs">({order.order_items?.length || 0} items)</span></span>
+                                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
+                                  order.status === 'delivered' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 
+                                  order.status === 'shipped' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                  order.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+                                  'bg-red-500/10 text-red-500 border-red-500/20'
+                                }`}>
+                                  {order.status || 'processing'}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                              <span className="text-sm font-bold text-white">₹{order.total_amount.toLocaleString()} <span className="text-zinc-500 text-xs">({order.order_items?.length || 0} items)</span></span>
-                              <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
-                                order.status === 'delivered' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 
-                                order.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
-                                'bg-zinc-900 text-zinc-300 border-zinc-800'
-                              }`}>
-                                {order.status}
-                              </span>
+
+                            {/* View Details Toggle Button */}
+                            <div className="flex justify-between items-center pt-4 border-t border-zinc-900">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
+                                  order.payment_status === 'captured' 
+                                    ? 'bg-green-950/60 text-green-400 border-green-900/50' 
+                                    : 'bg-yellow-950/60 text-yellow-400 border-yellow-900/50'
+                                }`}>
+                                  {order.payment_status === 'captured' ? '✓ Paid' : 'Payment Pending'}
+                                </span>
+                                {order.payment_method && (
+                                  <span className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider">
+                                    Via {order.payment_method}
+                                  </span>
+                                )}
+                              </div>
+
+                              <button 
+                                onClick={() => toggleExpandOrder(order.id)}
+                                className="flex items-center gap-2 text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-widest transition-colors cursor-pointer"
+                              >
+                                {isExpanded ? 'Hide Details' : 'View Details'} 
+                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                              </button>
                             </div>
+
+                            {/* Expandable Order Details Drawer */}
+                            <AnimatePresence>
+                              {isExpanded && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="mt-4 pt-4 border-t border-zinc-900/80 space-y-4"
+                                >
+                                  {/* Items List */}
+                                  <div>
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Order Items</h4>
+                                    <div className="space-y-2">
+                                      {order.order_items && order.order_items.length > 0 ? (
+                                        order.order_items.map((item: any, idx: number) => (
+                                          <div key={idx} className="flex items-center justify-between bg-zinc-900/40 p-3 rounded-xl border border-zinc-900 text-xs">
+                                            <div>
+                                              <p className="font-bold text-white uppercase tracking-wider">Product #{item.product_id}</p>
+                                              <p className="text-[10px] text-zinc-500 uppercase">Size: {item.size} • Qty: {item.quantity}</p>
+                                            </div>
+                                            <p className="font-bold text-red-500">₹{(item.price * item.quantity).toLocaleString()}</p>
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <p className="text-xs text-zinc-600 italic">No item details available</p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Shipping Address & Payment References */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                    <div className="bg-zinc-900/30 p-4 rounded-xl border border-zinc-900">
+                                      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1 flex items-center gap-1">
+                                        <Truck size={12} className="text-red-500" /> Shipping Address
+                                      </h4>
+                                      <p className="text-xs text-zinc-300 font-medium leading-relaxed">
+                                        {order.shipping_address || 'Address provided at checkout'}
+                                      </p>
+                                      {order.phone && (
+                                        <p className="text-[10px] text-zinc-500 font-bold mt-2">Phone: {order.phone}</p>
+                                      )}
+                                    </div>
+
+                                    <div className="bg-zinc-900/30 p-4 rounded-xl border border-zinc-900 space-y-2">
+                                      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1 flex items-center gap-1">
+                                        <CreditCard size={12} className="text-red-500" /> Payment Audit Info
+                                      </h4>
+                                      {order.razorpay_payment_id && (
+                                        <div>
+                                          <p className="text-[9px] text-zinc-500 uppercase font-bold">Razorpay Payment ID</p>
+                                          <p className="text-xs font-mono font-bold text-red-400">{order.razorpay_payment_id}</p>
+                                        </div>
+                                      )}
+                                      {order.razorpay_order_id && (
+                                        <div>
+                                          <p className="text-[9px] text-zinc-500 uppercase font-bold">Razorpay Order ID</p>
+                                          <p className="text-xs font-mono text-zinc-400">{order.razorpay_order_id}</p>
+                                        </div>
+                                      )}
+                                      {!order.razorpay_payment_id && (
+                                        <p className="text-xs text-zinc-400 italic">Method: {order.payment_method || 'WhatsApp Direct'}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </div>
-                          <div className="flex justify-end pt-4 border-t border-zinc-900">
-                            <button className="flex items-center gap-2 text-xs font-semibold text-red-500 hover:text-red-400 uppercase tracking-widest transition-colors">
-                              View Details <ExternalLink size={12} />
-                            </button>
-                          </div>
-                        </div>
-                      ))
+                        );
+                      })
                     ) : (
                       <div className="text-center py-20 bg-zinc-950/50 rounded-3xl border border-zinc-900 border-dashed">
                         <Package size={48} className="mx-auto text-zinc-800 mb-4" />

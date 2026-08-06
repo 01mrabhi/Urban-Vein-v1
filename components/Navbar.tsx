@@ -115,15 +115,8 @@ export default function Navbar() {
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-zinc-800 flex items-center justify-center cursor-pointer hover:border-zinc-600 transition-all p-0.5"
                 >
-                  <div className="w-full h-full rounded-full bg-zinc-900 overflow-hidden">
-                    <Image 
-                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${fullName}&backgroundColor=b91c1c&fontFamily=Arial&fontWeight=700`} 
-                      alt="User" 
-                      width={36}
-                      height={36}
-                      unoptimized
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center text-white font-black text-xs shadow-inner">
+                    {fullName ? fullName.charAt(0).toUpperCase() : 'U'}
                   </div>
                 </div>
               ) : (
