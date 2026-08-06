@@ -29,7 +29,7 @@ import { Analytics } from '@vercel/analytics/react';
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body className="font-sans antialiased bg-zinc-950 text-white" suppressHydrationWarning>
         <WishlistProvider>
           <CartProvider>

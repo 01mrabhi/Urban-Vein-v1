@@ -1,5 +1,5 @@
 'use client';
-import React, { Suspense } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { 
@@ -21,9 +21,15 @@ function SuccessContent() {
   const rawOrderId = searchParams.get('order_id');
   const paymentId = searchParams.get('payment_id');
 
-  const orderNumber = rawOrderId 
-    ? `UV-ORD-${rawOrderId.slice(0, 8).toUpperCase()}`
-    : "UV-" + Math.random().toString(36).substring(2, 9).toUpperCase();
+  const [orderNumber, setOrderNumber] = useState<string>('');
+
+  useEffect(() => {
+    if (rawOrderId) {
+      setOrderNumber(`UV-ORD-${rawOrderId.slice(0, 8).toUpperCase()}`);
+    } else {
+      setOrderNumber("UV-" + Math.random().toString(36).substring(2, 9).toUpperCase());
+    }
+  }, [rawOrderId]);
 
   return (
     <div className="relative p-8 lg:p-24 flex flex-col items-center justify-center min-h-[80vh]">
@@ -75,7 +81,7 @@ function SuccessContent() {
           <div className="flex justify-between items-center pb-6 border-b border-zinc-900">
              <div className="space-y-1">
                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 italic">Order Identification</p>
-               <p className="text-lg font-black tracking-tight text-white">{orderNumber}</p>
+               <p className="text-lg font-black tracking-tight text-white min-h-[28px]">{orderNumber || '...'}</p>
              </div>
              <button className="text-zinc-500 hover:text-white transition-colors" title="Download Receipt">
                 <Download size={20} />
@@ -121,7 +127,7 @@ function SuccessContent() {
 
         {/* Footer Note */}
         <p className="text-[8px] font-black uppercase tracking-[0.4em] text-zinc-700">
-          For operational support, quote ref: <span className="text-zinc-500">{orderNumber}</span>
+          For operational support, quote ref: <span className="text-zinc-500">{orderNumber || '...'}</span>
         </p>
       </motion.div>
     </div>
