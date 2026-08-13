@@ -438,6 +438,25 @@ export default function AdminDashboard() {
               <span className="hidden sm:inline">{isDark ? 'Light Studio' : 'Dark Cyber'}</span>
             </button>
 
+            {/* Lock HQ Portal Session Button */}
+            <button
+              onClick={() => {
+                localStorage.removeItem('uv_admin_session_key');
+                setIsAuthorized(false);
+                setOtpStep(false);
+                showToast('Admin Portal Locked Successfully', 'info');
+              }}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${
+                isDark
+                  ? 'bg-zinc-900 border-zinc-800 text-red-500 hover:bg-red-600 hover:text-white border-red-900/30'
+                  : 'bg-zinc-100 border-zinc-300 text-red-600 hover:bg-red-600 hover:text-white'
+              }`}
+              title="Lock HQ Portal Session"
+            >
+              <ShieldCheck size={16} />
+              <span className="hidden sm:inline">Lock HQ</span>
+            </button>
+
             {/* CSV Manifest Download */}
             <button
               onClick={exportCSV}
