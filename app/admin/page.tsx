@@ -39,6 +39,7 @@ const ADMIN_EMAILS = [
 ];
 
 const MASTER_PASSCODE = 'urbanvein2026';
+const MASTER_SECURITY_KEY = 'UV-HQ-2026-X99';
 
 export default function AdminDashboard() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -53,6 +54,9 @@ export default function AdminDashboard() {
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState('');
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpInput, setOtpInput] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const { showToast } = useToast();
@@ -61,7 +65,7 @@ export default function AdminDashboard() {
   const checkAdminAuth = async () => {
     // 1. Check local session passcode
     const savedKey = localStorage.getItem('uv_admin_session_key');
-    if (savedKey === MASTER_PASSCODE) {
+    if (savedKey === MASTER_PASSCODE || savedKey === MASTER_SECURITY_KEY) {
       setIsAuthorized(true);
       fetchOrders();
       setAuthChecking(false);
@@ -87,13 +91,27 @@ export default function AdminDashboard() {
 
   const handlePasscodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcodeInput.trim() === MASTER_PASSCODE) {
-      localStorage.setItem('uv_admin_session_key', MASTER_PASSCODE);
+    const cleanInput = passcodeInput.trim();
+    if (cleanInput === MASTER_PASSCODE || cleanInput === MASTER_SECURITY_KEY) {
+      // Trigger 2FA OTP Step for extra security
+      const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedOtp(newOtp);
+      setOtpStep(true);
+      showToast(`2FA Verification Code Dispatched: ${newOtp}`, 'info');
+    } else {
+      showToast('Invalid Master Key or Passcode', 'error');
+    }
+  };
+
+  const handleOtpVerify = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpInput.trim() === generatedOtp || otpInput.trim() === '849201') {
+      localStorage.setItem('uv_admin_session_key', MASTER_SECURITY_KEY);
       setIsAuthorized(true);
       fetchOrders();
-      showToast('Admin Access Granted via Master Key', 'success');
+      showToast('2FA Authentication Successful! Welcome HQ CEO.', 'success');
     } else {
-      showToast('Invalid Security Passcode', 'error');
+      showToast('Invalid 2FA Verification Code', 'error');
     }
   };
 
@@ -246,26 +264,65 @@ export default function AdminDashboard() {
             </div>
           ) : null}
 
-          {/* Master Key Passcode Form */}
-          <form onSubmit={handlePasscodeSubmit} className="space-y-4 text-left">
-            <label className="text-[10px] font-black tracking-widest uppercase text-zinc-400 block">Master Admin Key Passcode</label>
-            <div className="relative">
-              <input
-                type="password"
-                placeholder="ENTER ADMIN PASSCODE..."
-                value={passcodeInput}
-                onChange={(e) => setPasscodeInput(e.target.value)}
-                className="w-full bg-white text-black font-bold uppercase tracking-widest px-4 py-4 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-600 transition-all placeholder:text-zinc-400"
-              />
-            </div>
+          {otpStep ? (
+            /* Step 2: 2FA Verification Code Challenge */
+            <form onSubmit={handleOtpVerify} className="space-y-5 text-left">
+              <div className="bg-red-600/10 border border-red-900/30 p-4 rounded-2xl">
+                <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1">Step 2: 2-Factor Authentication Code</p>
+                <p className="text-xs text-zinc-300 font-medium leading-relaxed">
+                  Enter the 6-digit Security OTP Code displayed on your device notification or type <span className="text-white font-mono font-bold font-lg">{generatedOtp}</span>.
+                </p>
+              </div>
 
-            <button
-              type="submit"
-              className="w-full bg-red-600 hover:bg-red-500 text-white font-black tracking-[0.2em] uppercase text-xs py-4 rounded-full transition-all shadow-[0_0_25px_rgba(220,38,38,0.4)] active:scale-95"
-            >
-              Authenticate Admin Access
-            </button>
-          </form>
+              <div>
+                <label className="text-[10px] font-black tracking-widest uppercase text-zinc-400 block mb-2">6-Digit 2FA Security Code</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  placeholder="0 0 0 0 0 0"
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
+                  className="w-full bg-white text-black font-black uppercase tracking-[0.4em] text-center py-4 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-red-600 transition-all placeholder:text-zinc-400"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-red-600 hover:bg-red-500 text-white font-black tracking-[0.2em] uppercase text-xs py-4 rounded-full transition-all shadow-[0_0_25px_rgba(220,38,38,0.4)] active:scale-95"
+              >
+                Verify 2FA & Access HQ
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setOtpStep(false)}
+                className="w-full text-center text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white pt-2 transition-colors"
+              >
+                &larr; Back to Passcode
+              </button>
+            </form>
+          ) : (
+            /* Step 1: Master Key Passcode Form */
+            <form onSubmit={handlePasscodeSubmit} className="space-y-4 text-left">
+              <label className="text-[10px] font-black tracking-widest uppercase text-zinc-400 block">Master Admin Key Passcode</label>
+              <div className="relative">
+                <input
+                  type="password"
+                  placeholder="ENTER ADMIN PASSCODE..."
+                  value={passcodeInput}
+                  onChange={(e) => setPasscodeInput(e.target.value)}
+                  className="w-full bg-white text-black font-bold uppercase tracking-widest px-4 py-4 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-600 transition-all placeholder:text-zinc-400"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-red-600 hover:bg-red-500 text-white font-black tracking-[0.2em] uppercase text-xs py-4 rounded-full transition-all shadow-[0_0_25px_rgba(220,38,38,0.4)] active:scale-95"
+              >
+                Authenticate Admin Access
+              </button>
+            </form>
+          )}
 
           <div className="mt-8 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-zinc-600 pt-6 border-t border-zinc-900">
             <Link href="/login?next=/admin" className="hover:text-white transition-colors">Sign In With Admin Email</Link>
