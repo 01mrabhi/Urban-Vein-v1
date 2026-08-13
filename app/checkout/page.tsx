@@ -30,18 +30,37 @@ export default function CheckoutPage() {
   const { showToast } = useToast();
   const { isLoaded: isRazorpayLoaded } = useRazorpay();
 
-  const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    houseNumber: '',
-    streetName: '',
-    landmark: '',
-    pinCode: '',
-    paymentMethod: 'razorpay' // Default to Razorpay
-  });
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [pincodeDetails, setPincodeDetails] = useState<{ city: string; state: string; location: string } | null>(null);
 
-  const shipping = 69.00;
-  const total = subtotal + shipping;
+  const handlePincodeChange = async (val: string) => {
+    const cleaned = val.replace(/\D/g, '').slice(0, 6);
+    setFormData(prev => ({ ...prev, pinCode: cleaned }));
+
+    if (cleaned.length === 6) {
+      setPincodeLoading(true);
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${cleaned}`);
+        const data = await res.json();
+        if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
+          const po = data[0].PostOffice[0];
+          setPincodeDetails({
+            city: po.District,
+            state: po.State,
+            location: po.Name
+          });
+        } else {
+          setPincodeDetails(null);
+        }
+      } catch (e) {
+        console.error('PIN code lookup error', e);
+      } finally {
+        setPincodeLoading(false);
+      }
+    } else {
+      setPincodeDetails(null);
+    }
+  };
 
   useEffect(() => {
     const checkUser = async () => {
@@ -357,15 +376,31 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">PIN Code</label>
-                    <input 
-                      required
-                      type="text" 
-                      placeholder="000000"
-                      className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors"
-                      value={formData.pinCode}
-                      onChange={(e) => setFormData({...formData, pinCode: e.target.value})}
-                    />
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3 flex items-center justify-between">
+                      <span>PIN Code</span>
+                      {pincodeLoading && <span className="text-[9px] text-red-500 animate-pulse font-bold">Checking Postal Coverage...</span>}
+                    </label>
+                    <div className="relative">
+                      <input 
+                        required
+                        type="text" 
+                        maxLength={6}
+                        placeholder="e.g. 110001"
+                        className="w-full bg-zinc-950 border border-zinc-900 rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors tracking-widest font-bold"
+                        value={formData.pinCode}
+                        onChange={(e) => handlePincodeChange(e.target.value)}
+                      />
+                    </div>
+
+                    {pincodeDetails && (
+                      <div className="mt-2 text-[10px] font-bold text-green-400 bg-green-950/40 border border-green-900/50 rounded-xl p-3 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                          Verified: {pincodeDetails.city}, {pincodeDetails.state}
+                        </span>
+                        <span className="text-[9px] text-zinc-400 font-normal">Express Shipping Available</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

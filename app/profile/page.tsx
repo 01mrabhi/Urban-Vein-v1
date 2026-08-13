@@ -220,9 +220,21 @@ export default function ProfilePage() {
                     {orders.length > 0 ? (
                       orders.map(order => {
                         const isExpanded = expandedOrderId === order.id;
+                        
+                        // Calculate Stepper State
+                        const currentStatus = (order.status || 'pending').toLowerCase();
+                        const steps = [
+                          { label: 'Order Placed', active: true, done: true },
+                          { label: 'Processing', active: currentStatus === 'processing' || currentStatus === 'shipped' || currentStatus === 'delivered', done: currentStatus === 'shipped' || currentStatus === 'delivered' },
+                          { label: 'Shipped', active: currentStatus === 'shipped' || currentStatus === 'delivered', done: currentStatus === 'delivered' },
+                          { label: 'Delivered', active: currentStatus === 'delivered', done: currentStatus === 'delivered' }
+                        ];
+
                         return (
-                          <div key={order.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition-colors">
-                            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                          <div key={order.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition-colors space-y-6">
+                            
+                            {/* Order Header Info */}
+                            <div className="flex flex-wrap items-center justify-between gap-4">
                               <div>
                                 <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest mb-1">
                                   {new Date(order.created_at).toLocaleDateString('en-IN', {
@@ -231,10 +243,10 @@ export default function ProfilePage() {
                                     day: 'numeric'
                                   })}
                                 </p>
-                                <p className="text-white font-bold tracking-wide">ORD-{order.id.slice(0, 8).toUpperCase()}</p>
+                                <p className="text-white font-bold tracking-wide text-lg">ORD-{order.id.slice(0, 8).toUpperCase()}</p>
                               </div>
                               <div className="flex items-center gap-4">
-                                <span className="text-sm font-bold text-white">₹{order.total_amount.toLocaleString()} <span className="text-zinc-500 text-xs">({order.order_items?.length || 0} items)</span></span>
+                                <span className="text-base font-black text-white">₹{order.total_amount.toLocaleString()} <span className="text-zinc-500 text-xs font-normal">({order.order_items?.length || 0} items)</span></span>
                                 <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
                                   order.status === 'delivered' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 
                                   order.status === 'shipped' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
@@ -246,31 +258,74 @@ export default function ProfilePage() {
                               </div>
                             </div>
 
-                            {/* View Details Toggle Button */}
-                            <div className="flex justify-between items-center pt-4 border-t border-zinc-900">
+                            {/* VISUAL 4-STEP LIVE ORDER TRACKER */}
+                            <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-900 space-y-3">
+                              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">
+                                <span>Live Delivery Progress</span>
+                                <span className="text-red-500 font-bold">Standard Delivery (3-5 Days)</span>
+                              </div>
+                              
+                              <div className="relative flex items-center justify-between">
+                                {/* Track Line */}
+                                <div className="absolute top-1/2 left-0 right-0 h-1 bg-zinc-800 -translate-y-1/2 -z-0"></div>
+                                <div 
+                                  className="absolute top-1/2 left-0 h-1 bg-red-600 -translate-y-1/2 -z-0 transition-all duration-500"
+                                  style={{
+                                    width: currentStatus === 'delivered' ? '100%' : currentStatus === 'shipped' ? '66%' : currentStatus === 'processing' ? '33%' : '10%'
+                                  }}
+                                ></div>
+
+                                {steps.map((step, sIdx) => (
+                                  <div key={sIdx} className="relative z-10 flex flex-col items-center gap-1.5">
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all ${
+                                      step.done 
+                                        ? 'bg-red-600 text-white shadow-[0_0_10px_#dc2626]' 
+                                        : step.active 
+                                          ? 'bg-zinc-800 text-red-400 border-2 border-red-600 animate-pulse' 
+                                          : 'bg-zinc-900 text-zinc-600 border border-zinc-800'
+                                    }`}>
+                                      {step.done ? '✓' : sIdx + 1}
+                                    </div>
+                                    <span className={`text-[9px] font-bold uppercase tracking-wider ${step.active ? 'text-white' : 'text-zinc-600'}`}>
+                                      {step.label}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* View Details & Support Action */}
+                            <div className="flex flex-wrap justify-between items-center gap-3 pt-2 border-t border-zinc-900">
                               <div className="flex items-center gap-2">
-                                <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
+                                <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded border ${
                                   order.payment_status === 'captured' 
                                     ? 'bg-green-950/60 text-green-400 border-green-900/50' 
                                     : 'bg-yellow-950/60 text-yellow-400 border-yellow-900/50'
                                 }`}>
-                                  {order.payment_status === 'captured' ? '✓ Paid' : 'Payment Pending'}
+                                  {order.payment_status === 'captured' ? '✓ Paid via Razorpay' : 'Payment Pending'}
                                 </span>
-                                {order.payment_method && (
-                                  <span className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider">
-                                    Via {order.payment_method}
-                                  </span>
-                                )}
                               </div>
 
-                              <button 
-                                onClick={() => toggleExpandOrder(order.id)}
-                                className="flex items-center gap-2 text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-widest transition-colors cursor-pointer"
-                              >
-                                {isExpanded ? 'Hide Details' : 'View Details'} 
-                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                              </button>
-                            </div>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => {
+                                    const msg = encodeURIComponent(`Hi Urban Vein, I need a tracking update on Order #ORD-${order.id.slice(0, 8).toUpperCase()}`);
+                                    window.open(`https://wa.me/918264966094?text=${msg}`, '_blank');
+                                  }}
+                                  className="text-[10px] font-black uppercase tracking-widest bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white px-3 py-1.5 rounded-lg border border-zinc-800 transition-all flex items-center gap-1.5"
+                                >
+                                  Track via Support
+                                </button>
+
+                                <button 
+                                  onClick={() => toggleExpandOrder(order.id)}
+                                  className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-widest transition-colors cursor-pointer"
+                                >
+                                  {isExpanded ? 'Hide Details' : 'View Details'} 
+                                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                </button>
+                              </div>
+                            </div>div>
 
                             {/* Expandable Order Details Drawer */}
                             <AnimatePresence>
