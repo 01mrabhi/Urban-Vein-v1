@@ -78,11 +78,12 @@ export default function Footer() {
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600">Join the Vein</h3>
             <div className="relative group">
               <input 
+                suppressHydrationWarning
                 type="email" 
                 placeholder="Email address"
                 className="w-full bg-zinc-900/50 border border-zinc-900 rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-red-600 transition-colors placeholder:text-zinc-700"
               />
-              <button className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all shadow-lg shadow-red-600/20">
+              <button suppressHydrationWarning className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all shadow-lg shadow-red-600/20">
                 <Send size={18} />
               </button>
             </div>

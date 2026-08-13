@@ -46,6 +46,7 @@ export default function ProductSection() {
         <div className="flex flex-wrap gap-4 mb-16">
           {categoriesWithAll.map((cat) => (
             <button
+              suppressHydrationWarning
               key={cat}
               onClick={() => setActiveCategory(cat)}
               className={`px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${

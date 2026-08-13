@@ -87,10 +87,10 @@ export default function Navbar() {
         {/* Right Section: Icons */}
         {!isCheckout ? (
           <div className="flex-1 flex items-center justify-end gap-4 lg:gap-6">
-            <button onClick={() => setIsSearchOpen(true)} className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all">
+            <button suppressHydrationWarning onClick={() => setIsSearchOpen(true)} className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all">
               <Search size={20} />
             </button>
-            <button onClick={openSidebar} className="relative w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors bg-zinc-900 rounded-xl border border-zinc-800 group">
+            <button suppressHydrationWarning onClick={openSidebar} className="relative w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors bg-zinc-900 rounded-xl border border-zinc-800 group">
               <ShoppingBag size={18} />
               <AnimatePresence mode="popLayout">
                 {cartCount > 0 && (
