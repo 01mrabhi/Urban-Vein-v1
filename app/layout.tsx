@@ -13,11 +13,41 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'UrbanVein | Street Aesthetics',
-  description: 'Architecting the future of street aesthetics. High-grade fabrics. Zero Compromise.',
+  metadataBase: new URL('https://www.urbanvein.in'),
+  title: {
+    default: 'Urban Vein | High-Grade Streetwear & Urban Aesthetics',
+    template: '%s | Urban Vein'
+  },
+  description: 'Architecting the future of Indian streetwear. 100% Heavyweight Cotton Oversized Tees, Cyber Hoodies & Streetwear. Fast PAN-India Express Delivery.',
+  keywords: ['urban vein', 'urbanvein', 'streetwear india', 'oversized t shirts', 'streetwear brand india', 'premium tshirts'],
+  authors: [{ name: 'Urban Vein' }],
+  creator: 'Urban Vein',
+  publisher: 'Urban Vein',
   icons: {
     icon: '/icon.png',
     apple: '/icon.png',
+  },
+  openGraph: {
+    title: 'Urban Vein | Streetwear Aesthetics',
+    description: 'High-grade fabrics. Zero compromise. Discover the latest oversized drop with 1-click checkout & PAN-India express shipping.',
+    url: 'https://www.urbanvein.in',
+    siteName: 'Urban Vein',
+    images: [
+      {
+        url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1200&auto=format&fit=crop',
+        width: 1200,
+        height: 630,
+        alt: 'Urban Vein Streetwear Collection',
+      },
+    ],
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Urban Vein | High-Grade Streetwear',
+    description: 'Architecting the future of street aesthetics. Express PAN-India shipping.',
+    images: ['https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1200&auto=format&fit=crop'],
   },
 };
 

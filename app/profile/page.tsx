@@ -322,10 +322,8 @@ export default function ProfilePage() {
                                   className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-widest transition-colors cursor-pointer"
                                 >
                                   {isExpanded ? 'Hide Details' : 'View Details'} 
-                                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                </button>
                               </div>
-                            </div>div>
+                            </div>
 
                             {/* Expandable Order Details Drawer */}
                             <AnimatePresence>
