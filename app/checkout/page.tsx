@@ -25,6 +25,7 @@ export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const router = useRouter();
   const { showToast } = useToast();
   const { isLoaded: isRazorpayLoaded } = useRazorpay();
