@@ -30,14 +30,8 @@ export default function ProductDetailClient({ productId }: { productId: string }
   const [selectedSize, setSelectedSize] = useState('L');
   const [quantity, setQuantity] = useState(1);
   const [activeAccordion, setActiveAccordion] = useState<string | null>('details');
-  const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [currentImage, setCurrentImage] = useState<string | null>(product ? (product.image_back || product.image) : null);
   const [showSizeChart, setShowSizeChart] = useState(false);
-
-  useEffect(() => {
-    if (product && !currentImage) {
-      setCurrentImage(product.image_back || product.image);
-    }
-  }, [product, currentImage]);
 
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -395,23 +389,23 @@ export default function ProductDetailClient({ productId }: { productId: string }
                 </div>
                 <div className="grid grid-cols-3 p-3 border-b border-zinc-800/50 text-white font-bold">
                   <span>Medium (M)</span>
-                  <span>44"</span>
-                  <span>29"</span>
+                  <span>44&quot;</span>
+                  <span>29&quot;</span>
                 </div>
                 <div className="grid grid-cols-3 p-3 border-b border-zinc-800/50 text-white font-bold bg-zinc-900/30">
                   <span>Large (L)</span>
-                  <span>46"</span>
-                  <span>30"</span>
+                  <span>46&quot;</span>
+                  <span>30&quot;</span>
                 </div>
                 <div className="grid grid-cols-3 p-3 border-b border-zinc-800/50 text-white font-bold">
                   <span>X-Large (XL)</span>
-                  <span>48"</span>
-                  <span>31"</span>
+                  <span>48&quot;</span>
+                  <span>31&quot;</span>
                 </div>
                 <div className="grid grid-cols-3 p-3 text-white font-bold bg-zinc-900/30">
                   <span>XX-Large (XXL)</span>
-                  <span>50"</span>
-                  <span>32"</span>
+                  <span>50&quot;</span>
+                  <span>32&quot;</span>
                 </div>
               </div>
             </motion.div>

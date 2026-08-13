@@ -246,7 +246,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                 {/* Description & Technical Specs */}
                 <section className="space-y-8">
                   <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 italic">// Description</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 italic">&#47;&#47; Description</h3>
                     <p className="text-zinc-500 text-xs font-bold uppercase tracking-wider leading-relaxed italic">
                       {product.description} Engineered for a relaxed yet structured fit, it features dropped shoulders and a heavy-drape aesthetic that maintains its shape.
                     </p>
@@ -271,7 +271,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                 <section className="pt-12 border-t border-zinc-900">
                   <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
-                       <span className="text-red-600 text-[10px] font-black italic tracking-widest">// Recommended</span>
+                       <span className="text-red-600 text-[10px] font-black italic tracking-widest">&#47;&#47; Recommended</span>
                     </div>
                     <button className="text-[8px] font-black uppercase tracking-widest text-zinc-600 hover:text-white flex items-center gap-1 group">
                       View All <ChevronRight size={10} className="group-hover:translate-x-1 transition-transform" />
@@ -327,7 +327,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                 <X size={20} />
               </button>
               
-              <h3 className="text-xl font-black uppercase tracking-tight text-white mb-6 italic">// Size Chart (Inches)</h3>
+              <h3 className="text-xl font-black uppercase tracking-tight text-white mb-6 italic">&#47;&#47; Size Chart (Inches)</h3>
               
               <div className="overflow-hidden rounded-2xl border border-zinc-800">
                 <table className="w-full text-left text-xs uppercase tracking-widest font-bold">

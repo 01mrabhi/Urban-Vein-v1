@@ -5,16 +5,10 @@ import { CATEGORIES, Product, PRODUCTS } from '../lib/data';
 import { useRouter } from 'next/navigation';
 
 export default function ProductSection() {
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
-  const [loading, setLoading] = useState(false);
+  const [products] = useState<Product[]>(PRODUCTS);
+  const [loading] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
   const router = useRouter();
-
-  useEffect(() => {
-    // Using local data as requested to ensure real images are used
-    setProducts(PRODUCTS);
-    setLoading(false);
-  }, []);
 
   const handleNavigateToProduct = (product: Product) => {
     router.push(`/products/${product.id}`);

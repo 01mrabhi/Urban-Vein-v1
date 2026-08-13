@@ -94,11 +94,11 @@ export default function Home() {
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="flex gap-20 items-center">
               <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white">Next Drop in 04d : 12h : 45m : 02s</span>
-              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/50">//</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/50">&#47;&#47;</span>
               <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white">Join the Collective for Early Access</span>
-              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/50">//</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/50">&#47;&#47;</span>
               <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white">New Heavyweight Series Arriving</span>
-              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/50">//</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/50">&#47;&#47;</span>
             </div>
           ))}
         </motion.div>

@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
               onClick={() => setSubmitted(false)}
               className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white pt-2 transition-colors"
             >
-              Didn't receive email? Resend
+              Didn&apos;t receive email? Resend
             </button>
           </div>
         ) : (

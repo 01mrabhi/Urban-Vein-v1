@@ -144,7 +144,7 @@ export default function CartPage() {
                       <div className="space-y-4">
                         <div className="flex justify-between items-start">
                           <div>
-                            <span className="text-[8px] font-black uppercase tracking-widest text-red-600 mb-2 block">// {item.category}</span>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-red-600 mb-2 block">&#47;&#47; {item.category}</span>
                             <h3 className="text-xl font-black uppercase tracking-tight text-white">{item.name}</h3>
                           </div>
                           <p className="text-xl font-black tracking-tighter text-white">₹{item.price.toFixed(2)}</p>

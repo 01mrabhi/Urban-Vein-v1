@@ -21,15 +21,12 @@ function SuccessContent() {
   const rawOrderId = searchParams.get('order_id');
   const paymentId = searchParams.get('payment_id');
 
-  const [orderNumber, setOrderNumber] = useState<string>('');
-
-  useEffect(() => {
+  const [orderNumber] = useState<string>(() => {
     if (rawOrderId) {
-      setOrderNumber(`UV-ORD-${rawOrderId.slice(0, 8).toUpperCase()}`);
-    } else {
-      setOrderNumber("UV-" + Math.random().toString(36).substring(2, 9).toUpperCase());
+      return `UV-ORD-${rawOrderId.slice(0, 8).toUpperCase()}`;
     }
-  }, [rawOrderId]);
+    return "UV-" + Math.random().toString(36).substring(2, 9).toUpperCase();
+  });
 
   return (
     <div className="relative p-8 lg:p-24 flex flex-col items-center justify-center min-h-[80vh]">
