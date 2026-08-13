@@ -61,7 +61,7 @@ export default function AdminDashboard() {
 
   const { showToast } = useToast();
 
-  // Verify Admin Authority & Enforce Domain Security
+  // Verify Admin Authority & Enforce Strict Passcode Guard
   const checkAdminAuth = async () => {
     // 0. Strict Production Domain Protection Lock
     if (typeof window !== 'undefined') {
@@ -76,29 +76,21 @@ export default function AdminDashboard() {
       }
     }
 
-    // 1. Check local session passcode
+    // 1. Fetch current logged-in user for status display
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUser(user);
+    }
+
+    // 2. Mandatory Security Guard: Must have active Passcode / 2FA Session Key
     const savedKey = localStorage.getItem('uv_admin_session_key');
     if (savedKey === MASTER_PASSCODE || savedKey === MASTER_SECURITY_KEY) {
       setIsAuthorized(true);
       fetchOrders();
-      setAuthChecking(false);
-      return;
+    } else {
+      setIsAuthorized(false);
     }
 
-    // 2. Check Supabase Auth User
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      setCurrentUser(user);
-      const email = user.email?.toLowerCase() || '';
-      const isDomainAdmin = email.endsWith('@urbanvein.in');
-      const isListedAdmin = ADMIN_EMAILS.includes(email);
-      const isRoleAdmin = user.user_metadata?.role === 'admin';
-
-      if (isDomainAdmin || isListedAdmin || isRoleAdmin) {
-        setIsAuthorized(true);
-        fetchOrders();
-      }
-    }
     setAuthChecking(false);
   };
 
