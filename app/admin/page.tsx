@@ -61,8 +61,21 @@ export default function AdminDashboard() {
 
   const { showToast } = useToast();
 
-  // Verify Admin Authority
+  // Verify Admin Authority & Enforce Domain Security
   const checkAdminAuth = async () => {
+    // 0. Strict Production Domain Protection Lock
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      const isOfficialDomain = hostname === 'www.urbanvein.in' || hostname === 'urbanvein.in';
+      const isDev = hostname === 'localhost' || hostname === '127.0.0.1';
+
+      if (!isOfficialDomain && !isDev) {
+        // Redirect non-official domains (e.g. vercel.app) to official production admin URL
+        window.location.href = `https://www.urbanvein.in/admin`;
+        return;
+      }
+    }
+
     // 1. Check local session passcode
     const savedKey = localStorage.getItem('uv_admin_session_key');
     if (savedKey === MASTER_PASSCODE || savedKey === MASTER_SECURITY_KEY) {
