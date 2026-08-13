@@ -88,10 +88,10 @@ export default function RegisterPage() {
           </Link>
 
           <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Create Account</h1>
-          <p className="text-zinc-500 mb-8 font-medium">Join the next evolution of urban streetwear.</p>
+          <p className="text-zinc-500 mb-6 font-medium">Join the next evolution of urban streetwear.</p>
 
-          {/* PRIMARY GOOGLE 1-CLICK JOIN */}
-          <div className="mb-6">
+          {/* GOOGLE ICON SIGN IN BUTTON */}
+          <div className="flex flex-col items-center gap-3 mb-6">
             <button
               type="button"
               onClick={async () => {
@@ -101,17 +101,17 @@ export default function RegisterPage() {
                 });
                 if (error) showToast(error.message, 'error');
               }}
-              className="w-full bg-white hover:bg-zinc-100 text-black py-4 px-6 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all transform active:scale-95 shadow-[0_10px_30px_rgba(255,255,255,0.1)] group"
+              title="Join with Google"
+              className="w-14 h-14 rounded-2xl bg-[#1a1a1a] hover:bg-zinc-800 border border-zinc-800 flex items-center justify-center transition-all hover:scale-110 shadow-lg active:scale-95 group"
             >
-              <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" viewBox="0 0 24 24">
                 <path fill="#ea4335" d="M5.266 9.765A7.077 7.077 0 0112 4.909c1.69 0 3.218.6 4.409 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115z"/>
                 <path fill="#34a853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.076 7.076 0 01-6.725-4.962L1.248 17.24C3.206 21.2 7.273 23.909 12 23.909c3.1 0 5.733-1.013 7.707-2.726l-3.667-3.17z"/>
                 <path fill="#4a90e2" d="M19.707 21.183A11.977 11.977 0 0024 12.045c0-.825-.072-1.636-.206-2.436H12v4.814h6.814a5.833 5.833 0 01-2.505 3.864l3.398 2.896z"/>
                 <path fill="#fbbc05" d="M5.275 14.128A7.051 7.051 0 014.909 12c0-.745.122-1.464.335-2.145L1.24 6.74C.456 8.355 0 10.128 0 12c0 1.873.456 3.645 1.24 5.26l4.035-3.132z"/>
               </svg>
-              <span>Join with Google</span>
-              <span className="ml-auto text-[9px] bg-red-600 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Fast</span>
             </button>
+            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">1-Click Google Register</span>
           </div>
 
           <div className="relative flex items-center justify-center mb-6">
