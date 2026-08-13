@@ -7,10 +7,18 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const getURL = () => {
   let url =
-    process.env.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production
-    process.env.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
-    (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.APP_URL ??
+    (typeof window !== 'undefined' ? window.location.origin : '');
   
+  if (!url && process.env.NEXT_PUBLIC_VERCEL_URL) {
+    url = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+  }
+
+  if (!url) {
+    url = 'https://www.urbanvein.in';
+  }
+
   // Make sure to include `https://` when not localhost.
   url = url.includes('http') ? url : `https://${url}`;
   // Remove trailing slash if present for consistency
