@@ -177,6 +177,15 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                     </button>
                   </div>
+                  <div className="text-right pt-1">
+                    <button 
+                      type="button"
+                      onClick={() => { onClose(); router.push('/forgot-password'); }} 
+                      className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
                 </div>
 
                 <div className="pt-2">

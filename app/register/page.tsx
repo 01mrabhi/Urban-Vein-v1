@@ -88,10 +88,42 @@ export default function RegisterPage() {
           </Link>
 
           <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Create Account</h1>
-          <p className="text-zinc-500 mb-10 font-medium">Join the next evolution of urban streetwear.</p>
+          <p className="text-zinc-500 mb-8 font-medium">Join the next evolution of urban streetwear.</p>
 
-          <form className="space-y-6" onSubmit={handleRegister}>
-            
+          {/* PRIMARY GOOGLE 1-CLICK JOIN */}
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={async () => {
+                const { error } = await supabase.auth.signInWithOAuth({
+                  provider: 'google',
+                  options: { redirectTo: `${getURL()}/auth/callback` }
+                });
+                if (error) showToast(error.message, 'error');
+              }}
+              className="w-full bg-white hover:bg-zinc-100 text-black py-4 px-6 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all transform active:scale-95 shadow-[0_10px_30px_rgba(255,255,255,0.1)] group"
+            >
+              <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+                <path fill="#ea4335" d="M5.266 9.765A7.077 7.077 0 0112 4.909c1.69 0 3.218.6 4.409 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115z"/>
+                <path fill="#34a853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.076 7.076 0 01-6.725-4.962L1.248 17.24C3.206 21.2 7.273 23.909 12 23.909c3.1 0 5.733-1.013 7.707-2.726l-3.667-3.17z"/>
+                <path fill="#4a90e2" d="M19.707 21.183A11.977 11.977 0 0024 12.045c0-.825-.072-1.636-.206-2.436H12v4.814h6.814a5.833 5.833 0 01-2.505 3.864l3.398 2.896z"/>
+                <path fill="#fbbc05" d="M5.275 14.128A7.051 7.051 0 014.909 12c0-.745.122-1.464.335-2.145L1.24 6.74C.456 8.355 0 10.128 0 12c0 1.873.456 3.645 1.24 5.26l4.035-3.132z"/>
+              </svg>
+              <span>Join with Google</span>
+              <span className="ml-auto text-[9px] bg-red-600 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Fast</span>
+            </button>
+          </div>
+
+          <div className="relative flex items-center justify-center mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-zinc-800"></div>
+            </div>
+            <div className="relative bg-[#0f0f0f] px-4 text-[9px] font-black tracking-widest uppercase text-zinc-600">
+              Or Register with Email
+            </div>
+          </div>
+
+          <form className="space-y-5" onSubmit={handleRegister}>
             <div className="space-y-2">
               <label className="text-[11px] font-bold tracking-widest uppercase text-zinc-400">Full Name</label>
               <div className="relative">
@@ -142,7 +174,6 @@ export default function RegisterPage() {
                   {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </button>
               </div>
-              <p className="text-[10px] text-zinc-500 font-medium mt-1">Minimum 8 characters with numbers and symbols.</p>
             </div>
 
             <button 
@@ -154,46 +185,7 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <div className="mt-12">
-            <div className="relative flex items-center justify-center mb-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-zinc-800"></div>
-              </div>
-              <div className="relative bg-[#0f0f0f] px-4 text-[10px] font-black tracking-widest uppercase text-zinc-600">
-                Or join with
-              </div>
-            </div>
-
-            <div className="flex justify-center gap-4">
-              <button 
-                onClick={async () => {
-                  const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: getURL() } });
-                  if (error) showToast(error.message, 'error');
-                }}
-                className="w-12 h-12 rounded-full bg-[#1a1a1a] flex items-center justify-center hover:bg-zinc-800 hover:scale-105 transition-all border border-zinc-800"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="#ea4335" d="M5.266 9.765A7.077 7.077 0 0112 4.909c1.69 0 3.218.6 4.409 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115z"/>
-                  <path fill="#34a853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.076 7.076 0 01-6.725-4.962L1.248 17.24C3.206 21.2 7.273 23.909 12 23.909c3.1 0 5.733-1.013 7.707-2.726l-3.667-3.17z"/>
-                  <path fill="#4a90e2" d="M19.707 21.183A11.977 11.977 0 0024 12.045c0-.825-.072-1.636-.206-2.436H12v4.814h6.814a5.833 5.833 0 01-2.505 3.864l3.398 2.896z"/>
-                  <path fill="#fbbc05" d="M5.275 14.128A7.051 7.051 0 014.909 12c0-.745.122-1.464.335-2.145L1.24 6.74C.456 8.355 0 10.128 0 12c0 1.873.456 3.645 1.24 5.26l4.035-3.132z"/>
-                </svg>
-              </button>
-              <button 
-                onClick={async () => {
-                  const { error } = await supabase.auth.signInWithOAuth({ provider: 'facebook', options: { redirectTo: getURL() } });
-                  if (error) showToast(error.message, 'error');
-                }}
-                className="w-12 h-12 rounded-full bg-[#1a1a1a] flex items-center justify-center hover:bg-zinc-800 hover:scale-105 transition-all text-blue-500 border border-zinc-800"
-              >
-                <svg className="w-5 h-5 fill-blue-500" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <p className="text-center text-xs font-semibold text-zinc-500 mt-12">
+          <p className="text-center text-xs font-semibold text-zinc-500 mt-8">
             Already have an account? <Link href="/login" className="text-red-500 hover:text-red-400 font-bold">Sign In</Link>
           </p>
 
