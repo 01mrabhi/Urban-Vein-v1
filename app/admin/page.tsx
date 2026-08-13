@@ -32,6 +32,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
 
+const ADMIN_EMAILS = [
+  'urbanvein10@gmail.com',
+  'kingmohit276@gmail.com',
+  'support@urbanvein.in'
+];
+
+const MASTER_PASSCODE = 'urbanvein2026';
+
 export default function AdminDashboard() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [orders, setOrders] = useState<any[]>([]);
@@ -40,7 +48,54 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  
+  // Security Guard States
+  const [authChecking, setAuthChecking] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [passcodeInput, setPasscodeInput] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
   const { showToast } = useToast();
+
+  // Verify Admin Authority
+  const checkAdminAuth = async () => {
+    // 1. Check local session passcode
+    const savedKey = localStorage.getItem('uv_admin_session_key');
+    if (savedKey === MASTER_PASSCODE) {
+      setIsAuthorized(true);
+      fetchOrders();
+      setAuthChecking(false);
+      return;
+    }
+
+    // 2. Check Supabase Auth User
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUser(user);
+      const email = user.email?.toLowerCase() || '';
+      const isDomainAdmin = email.endsWith('@urbanvein.in');
+      const isListedAdmin = ADMIN_EMAILS.includes(email);
+      const isRoleAdmin = user.user_metadata?.role === 'admin';
+
+      if (isDomainAdmin || isListedAdmin || isRoleAdmin) {
+        setIsAuthorized(true);
+        fetchOrders();
+      }
+    }
+    setAuthChecking(false);
+  };
+
+  const handlePasscodeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passcodeInput.trim() === MASTER_PASSCODE) {
+      localStorage.setItem('uv_admin_session_key', MASTER_PASSCODE);
+      setIsAuthorized(true);
+      fetchOrders();
+      showToast('Admin Access Granted via Master Key', 'success');
+    } else {
+      showToast('Invalid Security Passcode', 'error');
+    }
+  };
 
   // Fetch real-time orders from Supabase
   const fetchOrders = async (showRefreshToast = false) => {
@@ -63,7 +118,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    fetchOrders();
+    checkAdminAuth();
 
     // Subscribe to Supabase Realtime changes on orders
     const channel = supabase
@@ -157,6 +212,69 @@ export default function AdminDashboard() {
   });
 
   const isDark = theme === 'dark';
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center text-white selection:bg-red-600/30">
+        <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-xs font-black uppercase tracking-[0.3em] text-zinc-500">Verifying Security Clearance...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 selection:bg-red-600/30">
+        <div className="w-full max-w-[480px] bg-[#0f0f0f] rounded-[2.5rem] p-8 sm:p-12 border border-zinc-900 text-center relative overflow-hidden shadow-2xl">
+          
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-red-600 rounded-full shadow-[0_0_20px_#dc2626]" />
+
+          <div className="w-16 h-16 rounded-3xl bg-red-600/10 border border-red-900/30 text-red-500 flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(220,38,38,0.2)]">
+            <ShieldCheck size={32} />
+          </div>
+
+          <h1 className="text-2xl font-black uppercase tracking-tight text-white mb-2">Restricted HQ Portal</h1>
+          <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest leading-relaxed mb-8">
+            This panel is encrypted & restricted to authorized Urban Vein administrators only.
+          </p>
+
+          {currentUser ? (
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 mb-6 text-left">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Signed In As</p>
+              <p className="text-xs font-bold text-white truncate">{currentUser.email}</p>
+              <span className="text-[9px] text-red-500 font-bold uppercase tracking-wider block mt-1">Status: Unauthorized Role</span>
+            </div>
+          ) : null}
+
+          {/* Master Key Passcode Form */}
+          <form onSubmit={handlePasscodeSubmit} className="space-y-4 text-left">
+            <label className="text-[10px] font-black tracking-widest uppercase text-zinc-400 block">Master Admin Key Passcode</label>
+            <div className="relative">
+              <input
+                type="password"
+                placeholder="ENTER ADMIN PASSCODE..."
+                value={passcodeInput}
+                onChange={(e) => setPasscodeInput(e.target.value)}
+                className="w-full bg-white text-black font-bold uppercase tracking-widest px-4 py-4 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-600 transition-all placeholder:text-zinc-400"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-red-600 hover:bg-red-500 text-white font-black tracking-[0.2em] uppercase text-xs py-4 rounded-full transition-all shadow-[0_0_25px_rgba(220,38,38,0.4)] active:scale-95"
+            >
+              Authenticate Admin Access
+            </button>
+          </form>
+
+          <div className="mt-8 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-zinc-600 pt-6 border-t border-zinc-900">
+            <Link href="/login?next=/admin" className="hover:text-white transition-colors">Sign In With Admin Email</Link>
+            <Link href="/" className="hover:text-white transition-colors">Return to Shop</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
