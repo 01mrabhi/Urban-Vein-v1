@@ -27,8 +27,18 @@ export default function CheckoutPage() {
   const [user, setUser] = useState<any>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const router = useRouter();
-  const { showToast } = useToast();
-  const { isLoaded: isRazorpayLoaded } = useRazorpay();
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phone: '',
+    houseNumber: '',
+    streetName: '',
+    landmark: '',
+    pinCode: '',
+    paymentMethod: 'razorpay'
+  });
+
+  const shipping = 69.00;
+  const total = subtotal + shipping;
 
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [pincodeDetails, setPincodeDetails] = useState<{ city: string; state: string; location: string } | null>(null);
