@@ -346,7 +346,6 @@ export default function AdminDashboard() {
       } : o));
 
       showToast('Order pushed to Shiprocket successfully!', 'success');
-      fetchOrders();
     } catch (err: any) {
       showToast(err.message || 'Shiprocket push failed', 'error');
     } finally {

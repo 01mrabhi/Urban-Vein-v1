@@ -153,6 +153,10 @@ export async function POST(request: Request) {
 
     if (updateError) {
       console.error('Failed to save Shiprocket reference to database:', updateError);
+      return NextResponse.json(
+        { error: `Shiprocket created order #${srResponse.orderId}, but database save failed: ${updateError.message}` },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
