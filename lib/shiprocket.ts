@@ -174,9 +174,18 @@ export async function createShiprocketOrder(payload: ShiprocketCreateOrderPayloa
 
   const data = await res.json();
 
-  if (!res.ok || data.status_code === 400 || data.status_code === 404) {
+  if (!res.ok || data.status_code === 400 || data.status_code === 404 || data.message === 'Invalid Data') {
     console.error('Shiprocket order creation error response:', data);
-    throw new Error(data.message || (data.errors ? JSON.stringify(data.errors) : 'Failed to create order on Shiprocket'));
+    let detailMsg = data.message || 'Failed to create order on Shiprocket';
+    if (data.errors) {
+      if (typeof data.errors === 'object') {
+        const errList = Object.entries(data.errors).map(([field, msgs]: any) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`);
+        if (errList.length > 0) detailMsg += ` [Details: ${errList.join('; ')}]`;
+      } else {
+        detailMsg += ` [Details: ${JSON.stringify(data.errors)}]`;
+      }
+    }
+    throw new Error(detailMsg);
   }
 
   return {

@@ -99,15 +99,26 @@ export async function POST(request: Request) {
 
     const pickupLocation = process.env.SHIPROCKET_PICKUP_LOCATION || 'Home';
 
+    // Split Customer Name into First & Last Name for Shiprocket validation
+    const nameParts = customerName.split(' ');
+    const firstName = nameParts[0] || 'Customer';
+    const lastName = nameParts.slice(1).join(' ') || '.';
+
+    // Ensure billing_address is at least 10 characters long
+    let fullBillingAddress = cleanAddress.replace(/,\s*PIN:\s*\d{6}/i, '').trim();
+    if (fullBillingAddress.length < 10) {
+      fullBillingAddress = `${fullBillingAddress}, Urban Vein Order`;
+    }
+
     // 3. Build Payload
     const payload = {
       order_id: `UV-${order.id.slice(0, 8).toUpperCase()}`,
       order_date: orderDate,
       pickup_location: pickupLocation,
-      billing_customer_name: customerName,
-      billing_last_name: '',
-      billing_address: houseNo,
-      billing_address_2: streetName,
+      billing_customer_name: firstName,
+      billing_last_name: lastName,
+      billing_address: fullBillingAddress,
+      billing_address_2: '',
       billing_city: 'Panchkula',
       billing_pincode: pincode,
       billing_state: 'Haryana',
