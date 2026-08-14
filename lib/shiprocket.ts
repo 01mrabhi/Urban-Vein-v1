@@ -41,7 +41,8 @@ export interface ShiprocketCreateOrderPayload {
   payment_method: 'Prepaid' | 'COD';
   sub_total: number;
   length: number; // cm
-  width: number; // cm
+  breadth: number; // cm
+  width?: number; // cm
   height: number; // cm
   weight: number; // kg
 }

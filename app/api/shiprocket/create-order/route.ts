@@ -130,6 +130,7 @@ export async function POST(request: Request) {
       payment_method: (order.payment_method === 'cod' ? 'COD' : 'Prepaid') as 'Prepaid' | 'COD',
       sub_total: order.total_amount || 0,
       length: 25, // Package dimensions default (cm)
+      breadth: 20,
       width: 20,
       height: 5,
       weight: 0.5, // Package weight default (kg)
