@@ -7,6 +7,7 @@ export const CATEGORIES = [
 
 export type Product = {
   id: string;
+  original_id?: string;
   name: string;
   price: string;
   description: string;
@@ -15,6 +16,10 @@ export type Product = {
   category: string;
   badge?: string;
   actionType?: 'quick-add' | 'waitlist';
+  is_upcoming?: boolean;
+  launch_date?: string;
+  is_out_of_stock?: boolean;
+  stock_quantity?: number;
 };
 
 export const PRODUCTS: Product[] = [

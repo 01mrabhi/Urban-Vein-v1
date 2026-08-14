@@ -17,6 +17,9 @@ interface ProductCardProps {
   description: string;
   badge?: string;
   actionType?: 'quick-add' | 'waitlist';
+  is_upcoming?: boolean;
+  launch_date?: string;
+  is_out_of_stock?: boolean;
   onClick?: () => void;
 }
 
@@ -30,6 +33,9 @@ export default function ProductCard({
   description, 
   badge, 
   actionType = 'quick-add',
+  is_upcoming,
+  launch_date,
+  is_out_of_stock,
   onClick
 }: ProductCardProps) {
   const { showToast } = useToast();
@@ -38,20 +44,36 @@ export default function ProductCard({
 
   const liked = isLiked(id);
 
+  // Compute status
+  const outOfStock = Boolean(is_out_of_stock);
+  const upcoming = Boolean(is_upcoming);
+
+  const displayBadge = outOfStock 
+    ? 'OUT OF STOCK' 
+    : upcoming 
+    ? 'UPCOMING DROP' 
+    : badge;
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="group cursor-pointer"
+      className={`group cursor-pointer ${outOfStock ? 'opacity-80' : ''}`}
       onClick={onClick}
     >
       <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-zinc-900 mb-6 border border-zinc-900 hover:border-zinc-800 transition-colors">
         {/* Badge */}
-        {badge && (
+        {displayBadge && (
           <div className="absolute top-6 left-6 z-10">
-            <span className="bg-red-600 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg">
-              {badge}
+            <span className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg ${
+              outOfStock 
+                ? 'bg-zinc-800 text-zinc-400 border border-zinc-700' 
+                : upcoming 
+                ? 'bg-yellow-500 text-black font-extrabold shadow-yellow-500/20' 
+                : 'bg-red-600 text-white shadow-red-600/20'
+            }`}>
+              {displayBadge}
             </span>
           </div>
         )}
@@ -90,32 +112,46 @@ export default function ProductCard({
 
         {/* Action Button */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[85%] z-10 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              const numericPrice = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
-              addToCart({
-                id: name.toLowerCase().replace(/\s+/g, '-'),
-                name,
-                price: numericPrice,
-                image,
-                size: 'L',
-                color: 'Phantom Black',
-                quantity: 1,
-                category: 'Quick Add'
-              });
-              showToast(`Added ${name} to your bag`, 'success');
-            }}
-            className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-2 ${
-              actionType === 'waitlist' 
-              ? 'bg-white text-black hover:bg-zinc-200' 
-              : 'bg-white text-black hover:bg-zinc-200'
-            }`}
-          >
-            {actionType === 'waitlist' ? 'Join Waitlist' : (
-              <>Quick Add <Plus size={14} /></>
-            )}
-          </button>
+          {outOfStock ? (
+            <button 
+              disabled
+              onClick={(e) => e.stopPropagation()}
+              className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-zinc-800 text-zinc-400 cursor-not-allowed shadow-xl"
+            >
+              Out of Stock
+            </button>
+          ) : upcoming ? (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                showToast(`We will notify you when ${name} drops!`, 'info');
+              }}
+              className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-yellow-500 text-black hover:bg-yellow-400 shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              Notify Me On Drop ✨
+            </button>
+          ) : (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                const numericPrice = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
+                addToCart({
+                  id: name.toLowerCase().replace(/\s+/g, '-'),
+                  name,
+                  price: numericPrice,
+                  image,
+                  size: 'L',
+                  color: 'Phantom Black',
+                  quantity: 1,
+                  category: 'Quick Add'
+                });
+                showToast(`Added ${name} to your bag`, 'success');
+              }}
+              className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-white text-black hover:bg-zinc-200 shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              Quick Add <Plus size={14} />
+            </button>
+          )}
         </div>
 
         {/* Gradient Overlay */}

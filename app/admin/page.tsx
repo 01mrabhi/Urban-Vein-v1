@@ -59,7 +59,26 @@ export default function AdminDashboard() {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   
   // Navigation Tab State
-  const [activeTab, setActiveTab] = useState<'orders' | 'coupons'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'coupons'>('orders');
+
+  // Product CMS States
+  const [cmsProducts, setCmsProducts] = useState<any[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [productForm, setProductForm] = useState({
+    name: '',
+    price: '',
+    description: '',
+    image: '',
+    image_back: '',
+    category: 'Oversized Collection',
+    badge: 'NEW',
+    is_upcoming: false,
+    launch_date: '',
+    is_out_of_stock: false,
+    stock_quantity: '50'
+  });
 
   // Coupon Engine States
   const [coupons, setCoupons] = useState<any[]>([]);
@@ -208,11 +227,113 @@ export default function AdminDashboard() {
     }
   };
 
+  // Fetch CMS Products list
+  const fetchCmsProducts = async () => {
+    setProductsLoading(true);
+    try {
+      const res = await fetch('/api/products/manage');
+      const data = await res.json();
+      if (res.ok) {
+        setCmsProducts(data.products || []);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch CMS products:', err);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (activeTab === 'coupons') {
+    if (activeTab === 'products') {
+      fetchCmsProducts();
+    } else if (activeTab === 'coupons') {
       fetchCoupons();
     }
   }, [activeTab]);
+
+  // Handle Save Product (Create or Update)
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productForm.name || !productForm.price || !productForm.image) {
+      showToast('Title, Price, and Front Image URL are required', 'error');
+      return;
+    }
+
+    try {
+      const method = editingProduct ? 'PUT' : 'POST';
+      const body = editingProduct ? { id: editingProduct.id, ...productForm } : productForm;
+
+      const res = await fetch('/api/products/manage', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to save product');
+
+      showToast(data.message || 'Product saved successfully!', 'success');
+      setIsAddProductModalOpen(false);
+      setEditingProduct(null);
+      fetchCmsProducts();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to save product', 'error');
+    }
+  };
+
+  // Toggle Out of Stock Status
+  const handleToggleStock = async (product: any) => {
+    const newStockState = !product.is_out_of_stock;
+    try {
+      const res = await fetch('/api/products/manage', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: product.id, is_out_of_stock: newStockState }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update stock');
+
+      setCmsProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_out_of_stock: newStockState } : p));
+      showToast(`${product.name} is now ${newStockState ? 'OUT OF STOCK' : 'IN STOCK'}`, 'info');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update stock', 'error');
+    }
+  };
+
+  // Toggle Upcoming Drop Status
+  const handleToggleUpcoming = async (product: any) => {
+    const newUpcomingState = !product.is_upcoming;
+    try {
+      const res = await fetch('/api/products/manage', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: product.id, is_upcoming: newUpcomingState }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update status');
+
+      setCmsProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_upcoming: newUpcomingState } : p));
+      showToast(`${product.name} set to ${newUpcomingState ? 'UPCOMING DROP' : 'LIVE'}`, 'info');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update status', 'error');
+    }
+  };
+
+  // Delete Product Handler
+  const handleDeleteProduct = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete product "${name}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/products/manage?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete product');
+
+      showToast(`Product "${name}" deleted`, 'info');
+      setCmsProducts(prev => prev.filter(p => p.id !== id));
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete product', 'error');
+    }
+  };
 
   // Create Coupon Handler
   const handleCreateCoupon = async (e: React.FormEvent) => {
@@ -742,6 +863,18 @@ export default function AdminDashboard() {
             >
               <ShoppingCart size={16} />
               Orders Stream ({orders.length})
+            </button>
+
+            <button
+              onClick={() => setActiveTab('products')}
+              className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
+                activeTab === 'products'
+                  ? 'bg-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)]'
+                  : 'bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              <Package size={16} />
+              Products & Drops CMS ({cmsProducts.length})
             </button>
 
             <button
@@ -1288,7 +1421,175 @@ export default function AdminDashboard() {
                       </tbody>
                     </table>
                   </div>
+                ) : activeTab === 'products' ? (
+            /* PRODUCTS & DROPS CMS HQ */
+            <div className="space-y-6">
+              {/* Header Action Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-6">
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+                    <Package className="text-red-500" size={22} />
+                    Products & Collection Drops CMS
+                  </h3>
+                  <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mt-1">
+                    Manage apparel items, set In/Out of Stock statuses, and schedule upcoming collection launches with live countdown timers.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setEditingProduct(null);
+                    setProductForm({
+                      name: '',
+                      price: '',
+                      description: '',
+                      image: '',
+                      image_back: '',
+                      category: 'Oversized Collection',
+                      badge: 'NEW',
+                      is_upcoming: false,
+                      launch_date: '',
+                      is_out_of_stock: false,
+                      stock_quantity: '50'
+                    });
+                    setIsAddProductModalOpen(true);
+                  }}
+                  className="bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest px-5 py-3 rounded-2xl flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all active:scale-95"
+                >
+                  <Plus size={16} />
+                  + Add New Product / Drop
+                </button>
+              </div>
+
+              {/* Products Table */}
+              <div className={`rounded-3xl border overflow-hidden ${
+                isDark ? 'bg-[#0f0f0f] border-zinc-900' : 'bg-white border-zinc-200 shadow-sm'
+              }`}>
+                {productsLoading ? (
+                  <div className="py-20 text-center text-xs font-black uppercase tracking-widest text-zinc-500 animate-pulse">
+                    Loading Product Catalog...
+                  </div>
+                ) : cmsProducts.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className={`border-b text-[10px] font-black uppercase tracking-widest ${
+                          isDark ? 'border-zinc-900 text-zinc-500 bg-zinc-950/50' : 'border-zinc-200 text-zinc-400 bg-zinc-50'
+                        }`}>
+                          <th className="py-4 px-6">Product</th>
+                          <th className="py-4 px-6">Category</th>
+                          <th className="py-4 px-6">Price</th>
+                          <th className="py-4 px-6">Stock Status</th>
+                          <th className="py-4 px-6">Launch Status</th>
+                          <th className="py-4 px-6 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-900 text-xs font-bold">
+                        {cmsProducts.map((p) => (
+                          <tr key={p.id} className="hover:bg-zinc-900/30 transition-colors">
+                            <td className="py-4 px-6">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-14 relative rounded-xl overflow-hidden bg-zinc-950 border border-zinc-800 flex-shrink-0">
+                                  <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                                </div>
+                                <div>
+                                  <p className="font-black text-white text-sm">{p.name}</p>
+                                  <p className="text-[10px] text-zinc-500 font-mono">ID: #{p.original_id || p.id.slice(0, 6)}</p>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="py-4 px-6">
+                              <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-zinc-900 text-zinc-300 border border-zinc-800">
+                                {p.category || 'Oversized'}
+                              </span>
+                            </td>
+
+                            <td className="py-4 px-6 font-black text-red-500">{p.price}</td>
+
+                            {/* Stock Status Toggle */}
+                            <td className="py-4 px-6">
+                              <button
+                                onClick={() => handleToggleStock(p)}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
+                                  p.is_out_of_stock
+                                    ? 'bg-red-500/10 text-red-400 border-red-900/40 hover:bg-red-500/20'
+                                    : 'bg-green-500/10 text-green-400 border-green-900/40 hover:bg-green-500/20'
+                                }`}
+                              >
+                                {p.is_out_of_stock ? <ToggleLeft size={14} /> : <ToggleRight size={14} />}
+                                {p.is_out_of_stock ? 'OUT OF STOCK' : 'IN STOCK'}
+                              </button>
+                            </td>
+
+                            {/* Launch Status Toggle */}
+                            <td className="py-4 px-6">
+                              <button
+                                onClick={() => handleToggleUpcoming(p)}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
+                                  p.is_upcoming
+                                    ? 'bg-yellow-500/10 text-yellow-400 border-yellow-900/40 hover:bg-yellow-500/20'
+                                    : 'bg-blue-500/10 text-blue-900/40 hover:bg-blue-500/20'
+                                }`}
+                              >
+                                {p.is_upcoming ? '⏳ UPCOMING DROP' : 'LIVE IN STORE'}
+                              </button>
+                            </td>
+
+                            <td className="py-4 px-6 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingProduct(p);
+                                    setProductForm({
+                                      name: p.name,
+                                      price: p.price,
+                                      description: p.description || '',
+                                      image: p.image,
+                                      image_back: p.image_back || '',
+                                      category: p.category || 'Oversized Collection',
+                                      badge: p.badge || 'NEW',
+                                      is_upcoming: Boolean(p.is_upcoming),
+                                      launch_date: p.launch_date || '',
+                                      is_out_of_stock: Boolean(p.is_out_of_stock),
+                                      stock_quantity: (p.stock_quantity || 50).toString()
+                                    });
+                                    setIsAddProductModalOpen(true);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 transition-colors text-[10px] font-black uppercase tracking-widest"
+                                >
+                                  Edit
+                                </button>
+
+                                <button
+                                  onClick={() => handleDeleteProduct(p.id, p.name)}
+                                  className="p-1.5 rounded-xl bg-zinc-900 hover:bg-red-950 text-zinc-400 hover:text-red-400 border border-zinc-800 transition-colors"
+                                  title="Delete Product"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
+                  <div className="py-20 text-center space-y-3">
+                    <Package size={48} className="mx-auto text-zinc-700" />
+                    <p className="font-bold text-sm text-zinc-500">No products found.</p>
+                    <button
+                      onClick={() => setIsAddProductModalOpen(true)}
+                      className="text-xs font-black uppercase tracking-widest text-red-500 underline hover:text-red-400"
+                    >
+                      + Add your first product
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
                   <div className="py-20 text-center space-y-3">
                     <Tag size={48} className="mx-auto text-zinc-700" />
                     <p className="font-bold text-sm text-zinc-500">No promo codes created yet.</p>
@@ -1442,6 +1743,177 @@ export default function AdminDashboard() {
                     className="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all"
                   >
                     Publish Promo Code
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ADD / EDIT PRODUCT MODAL */}
+      <AnimatePresence>
+        {isAddProductModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setIsAddProductModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#0f0f0f] border border-zinc-800 rounded-3xl p-6 sm:p-8 max-w-2xl w-full text-white shadow-2xl relative max-h-[90vh] overflow-y-auto space-y-6"
+            >
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight text-white flex items-center gap-2">
+                    <Package className="text-red-500" size={20} />
+                    {editingProduct ? `Edit Product: ${editingProduct.name}` : 'Add New Apparel Product / Launch'}
+                  </h3>
+                  <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mt-0.5">
+                    Configure front/back images, pricing, stock status, and drop dates
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsAddProductModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center font-black"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveProduct} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Product Title *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Cyber Samurai Oversized Tee"
+                    value={productForm.name}
+                    onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs font-bold text-white focus:outline-none focus:border-red-600"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Price (₹) *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 599.00 or ₹599.00"
+                      value={productForm.price}
+                      onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs font-bold text-white focus:outline-none focus:border-red-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Category *</label>
+                    <select
+                      value={productForm.category}
+                      onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs font-bold uppercase text-white focus:outline-none focus:border-red-600"
+                    >
+                      <option value="Oversized Collection">Oversized Collection</option>
+                      <option value="Graphic Series">Graphic Series</option>
+                      <option value="Essential Solids">Essential Solids</option>
+                      <option value="Limited Drops">Limited Drops</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Front Image URL *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. /products/zoro_front.jpg"
+                      value={productForm.image}
+                      onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-red-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Back Image URL (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. /products/zoro_back.jpg"
+                      value={productForm.image_back}
+                      onChange={(e) => setProductForm({ ...productForm, image_back: e.target.value })}
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-red-600"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Description / Lore</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Describe the fabric, fit, design inspiration, and feel..."
+                    value={productForm.description}
+                    onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-red-600"
+                  />
+                </div>
+
+                {/* Status Toggles Section */}
+                <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block">Inventory & Drop Controls</span>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white">Mark as Out of Stock</span>
+                    <button
+                      type="button"
+                      onClick={() => setProductForm({ ...productForm, is_out_of_stock: !productForm.is_out_of_stock })}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center gap-1.5 cursor-pointer ${
+                        productForm.is_out_of_stock
+                          ? 'bg-red-500/20 text-red-400 border-red-900/40'
+                          : 'bg-zinc-900 text-zinc-400 border-zinc-800'
+                      }`}
+                    >
+                      {productForm.is_out_of_stock ? '✓ OUT OF STOCK' : 'IN STOCK'}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-zinc-900">
+                    <div>
+                      <span className="text-xs font-bold text-white block">Schedule Upcoming Collection Drop</span>
+                      <span className="text-[9px] text-zinc-500 block">Previews on storefront with live countdown badge</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setProductForm({ ...productForm, is_upcoming: !productForm.is_upcoming })}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center gap-1.5 cursor-pointer ${
+                        productForm.is_upcoming
+                          ? 'bg-yellow-500/20 text-yellow-400 border-yellow-900/40'
+                          : 'bg-zinc-900 text-zinc-400 border-zinc-800'
+                      }`}
+                    >
+                      {productForm.is_upcoming ? '⏳ UPCOMING DROP' : 'LIVE NOW'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex items-center justify-end gap-3 border-t border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddProductModalOpen(false)}
+                    className="px-5 py-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 text-xs font-black uppercase tracking-widest transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)]"
+                  >
+                    {editingProduct ? 'Update Product' : 'Publish Product / Launch Drop'}
                   </button>
                 </div>
               </form>

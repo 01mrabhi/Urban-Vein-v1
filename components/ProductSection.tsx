@@ -5,10 +5,27 @@ import { CATEGORIES, Product, PRODUCTS } from '../lib/data';
 import { useRouter } from 'next/navigation';
 
 export default function ProductSection() {
-  const [products] = useState<Product[]>(PRODUCTS);
-  const [loading] = useState(false);
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
   const router = useRouter();
+
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const res = await fetch('/api/products/manage');
+        const data = await res.json();
+        if (res.ok && data.products && data.products.length > 0) {
+          setProducts(data.products);
+        }
+      } catch (err) {
+        console.error('Failed to load dynamic products:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProducts();
+  }, []);
 
   const handleNavigateToProduct = (product: Product) => {
     router.push(`/products/${product.id}`);
