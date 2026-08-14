@@ -191,7 +191,7 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
-      const formattedAddress = `${houseNumber}, ${streetName}${landmark ? `, Near ${landmark}` : ''}, PIN: ${pinCode}`;
+      const formattedAddress = `Name: ${fullName}, ${houseNumber}, ${streetName}${landmark ? `, Near ${landmark}` : ''}, PIN: ${pinCode}`;
 
       // 1. Create the order in Supabase DB
       const { data: order, error: orderError } = await supabase

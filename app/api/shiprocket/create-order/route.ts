@@ -48,12 +48,20 @@ export async function POST(request: Request) {
     }
 
     // 2. Parse Shipping Address & Contact
-    // Standard address stored format: "House No, Street Name, Near Landmark, PIN: 110001"
+    // Address format: "Name: John Doe, House No, Street Name, Near Landmark, PIN: 110001"
     const fullAddress = order.shipping_address || 'Address Not Provided';
-    const addressParts = fullAddress.split(', ');
+    
+    let customerName = 'Urban Vein Customer';
+    const nameMatch = fullAddress.match(/Name:\s*([^,]+)/i);
+    if (nameMatch && nameMatch[1]) {
+      customerName = nameMatch[1].trim();
+    }
+
+    const cleanAddress = fullAddress.replace(/^Name:\s*[^,]+,\s*/i, '');
+    const addressParts = cleanAddress.split(', ');
 
     let houseNo = addressParts[0] || 'Flat/House';
-    let streetName = addressParts[1] || 'Street';
+    let streetName = addressParts.slice(1, 3).join(', ') || 'Street';
     let pincode = '110001';
 
     // Extract PIN code if present
@@ -89,20 +97,20 @@ export async function POST(request: Request) {
       .replace('T', ' ')
       .slice(0, 16);
 
-    const pickupLocation = process.env.SHIPROCKET_PICKUP_LOCATION || 'Primary';
+    const pickupLocation = process.env.SHIPROCKET_PICKUP_LOCATION || 'Home';
 
     // 3. Build Payload
     const payload = {
       order_id: `UV-${order.id.slice(0, 8).toUpperCase()}`,
       order_date: orderDate,
       pickup_location: pickupLocation,
-      billing_customer_name: 'Urban Vein Customer',
+      billing_customer_name: customerName,
       billing_last_name: '',
       billing_address: houseNo,
       billing_address_2: streetName,
-      billing_city: 'New Delhi',
+      billing_city: 'Panchkula',
       billing_pincode: pincode,
-      billing_state: 'Delhi',
+      billing_state: 'Haryana',
       billing_country: 'India',
       billing_email: 'customer@urbanvein.in',
       billing_phone: cleanPhone,
