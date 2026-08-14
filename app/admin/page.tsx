@@ -355,6 +355,11 @@ export default function AdminDashboard() {
 
   // Admin Shiprocket Actions (AWB, Label, Invoice, Pickup, Cancel)
   const handleShiprocketAdminAction = async (action: string, order: any) => {
+    if (action === 'generate_label' && !order.shiprocket_awb_code) {
+      showToast('Please click "ASSIGN AWB & COURIER" first before printing the label!', 'error');
+      return;
+    }
+
     setActionLoading(prev => ({ ...prev, [order.id]: action }));
     try {
       const res = await fetch('/api/shiprocket/admin-action', {
@@ -371,7 +376,16 @@ export default function AdminDashboard() {
 
       if (!res.ok) throw new Error(data.error || 'Action failed');
 
-      if (action === 'generate_label' && data.labelUrl) {
+      if (action === 'assign_awb') {
+        setOrders(prev => prev.map(o => o.id === order.id ? {
+          ...o,
+          shiprocket_awb_code: data.awbCode || o.shiprocket_awb_code,
+          courier_name: data.courierName || o.courier_name,
+          status: 'shipped',
+          shipment_status: 'awb_assigned',
+        } : o));
+        showToast(data.message || 'AWB & Courier Assigned successfully!', 'success');
+      } else if (action === 'generate_label' && data.labelUrl) {
         window.open(data.labelUrl, '_blank');
         showToast('Shipping Label generated and opened', 'success');
       } else if (action === 'generate_invoice' && data.invoiceUrl) {
