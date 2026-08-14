@@ -10,7 +10,8 @@ import {
   MessageSquare,
   CheckCircle2,
   Lock,
-  Truck
+  Truck,
+  Sparkles
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useCart } from '../../context/CartContext';
@@ -40,8 +41,54 @@ export default function CheckoutPage() {
     paymentMethod: 'razorpay'
   });
 
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+  } | null>(null);
+
+  const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
   const shipping = 69.00;
-  const total = subtotal + shipping;
+  const total = Math.max(0, subtotal + shipping - discountAmount);
+
+  const handleApplyPromoCode = async () => {
+    if (!promoCodeInput.trim()) {
+      showToast('Please enter a promo code', 'info');
+      return;
+    }
+
+    setPromoLoading(true);
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCodeInput, subtotal }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.valid) {
+        throw new Error(data.error || 'Invalid promo code');
+      }
+
+      setAppliedCoupon({
+        code: data.code,
+        discountAmount: data.discountAmount,
+      });
+
+      showToast(data.message || `Promo code ${data.code} applied! Saved ₹${data.discountAmount}`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to apply promo code', 'error');
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleRemovePromoCode = () => {
+    setAppliedCoupon(null);
+    setPromoCodeInput('');
+    showToast('Promo code removed', 'info');
+  };
 
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [pincodeDetails, setPincodeDetails] = useState<{ city: string; state: string; location: string } | null>(null);
@@ -629,7 +676,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* Price Table */}
-              <div className="space-y-6 mb-10 pt-6 border-t border-zinc-900">
+              <div className="space-y-4 mb-8 pt-6 border-t border-zinc-900">
                 <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-zinc-400">
                   <span>Subtotal</span>
                   <span className="text-white">₹{subtotal.toLocaleString()}</span>
@@ -638,25 +685,64 @@ export default function CheckoutPage() {
                   <span>Shipping (Express)</span>
                   <span className="text-white">₹{shipping.toLocaleString()}</span>
                 </div>
+                {appliedCoupon && (
+                  <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-green-400 bg-green-950/30 border border-green-900/40 p-3 rounded-xl">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles size={14} /> Coupon ({appliedCoupon.code})
+                    </span>
+                    <span>-₹{appliedCoupon.discountAmount.toLocaleString()}</span>
+                  </div>
+                )}
               </div>
 
               {/* Total */}
-              <div className="flex items-end justify-between mb-10">
+              <div className="flex items-end justify-between mb-8">
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600 mb-2">Total Amount</span>
                 <span className="text-5xl lg:text-6xl font-black tracking-tighter text-red-600">₹{total.toLocaleString()}</span>
               </div>
 
-              {/* Promo Code */}
-              <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="PROMO CODE"
-                  className="w-full bg-zinc-950/50 border border-zinc-900 rounded-2xl px-6 py-5 text-[10px] font-black uppercase tracking-[0.3em] focus:outline-none focus:border-red-600 transition-colors pr-24"
-                />
-                <button className="absolute right-3 top-1/2 -translate-y-1/2 bg-zinc-900 text-white px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-red-600 transition-colors">
-                  Apply
-                </button>
-              </div>
+              {/* Promo Code Box */}
+              {appliedCoupon ? (
+                <div className="bg-green-950/40 border border-green-900/50 p-4 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={18} className="text-green-400" />
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-wider text-green-400">Promo Code {appliedCoupon.code} Applied</p>
+                      <p className="text-[9px] text-zinc-400 font-medium">You saved ₹{appliedCoupon.discountAmount.toLocaleString()} on this order</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleRemovePromoCode}
+                    className="text-[9px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    placeholder="ENTER PROMO CODE (e.g. URBAN20)"
+                    value={promoCodeInput}
+                    onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleApplyPromoCode();
+                      }
+                    }}
+                    className="w-full bg-zinc-950/50 border border-zinc-900 rounded-2xl px-6 py-5 text-[10px] font-black uppercase tracking-[0.3em] focus:outline-none focus:border-red-600 transition-colors pr-24 placeholder:text-zinc-700"
+                  />
+                  <button 
+                    type="button"
+                    onClick={handleApplyPromoCode}
+                    disabled={promoLoading}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-zinc-900 hover:bg-red-600 disabled:bg-zinc-800 text-white px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-colors"
+                  >
+                    {promoLoading ? 'Validating...' : 'Apply'}
+                  </button>
+                </div>
+              )}
             </motion.section>
           </div>
         </div>
