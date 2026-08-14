@@ -300,6 +300,30 @@ export default function AdminDashboard() {
     }
   };
 
+  // Delete Order Handler
+  const handleDeleteOrder = async (orderId: string) => {
+    const shortId = orderId.slice(0, 8).toUpperCase();
+    if (!window.confirm(`Are you sure you want to permanently delete Order #ORD-${shortId}? This will remove it from all database tables and customer profiles.`)) {
+      return;
+    }
+
+    setActionLoading(prev => ({ ...prev, [orderId]: 'delete' }));
+    try {
+      const res = await fetch(`/api/orders/delete?id=${orderId}`, { method: 'DELETE' });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to delete order');
+
+      showToast(data.message || `Order #ORD-${shortId} deleted successfully`, 'success');
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      if (expandedOrderId === orderId) setExpandedOrderId(null);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete order', 'error');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [orderId]: null }));
+    }
+  };
+
   // Push order to Shiprocket
   const handlePushToShiprocket = async (orderId: string) => {
     setActionLoading(prev => ({ ...prev, [orderId]: 'push' }));
@@ -945,13 +969,24 @@ export default function AdminDashboard() {
 
                             {/* Actions */}
                             <td className="py-5 px-6 text-right whitespace-nowrap">
-                              <button
-                                onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
-                                className="text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-widest transition-colors inline-flex items-center gap-1"
-                              >
-                                {isExpanded ? 'Hide' : 'Inspect'}
-                                <ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                              </button>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
+                                  className="text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-widest transition-colors inline-flex items-center gap-1"
+                                >
+                                  {isExpanded ? 'Hide' : 'Inspect'}
+                                  <ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                <button
+                                  onClick={() => handleDeleteOrder(order.id)}
+                                  disabled={actionLoading[order.id] === 'delete'}
+                                  className="p-1.5 rounded-lg bg-zinc-900 hover:bg-red-950 text-zinc-400 hover:text-red-400 border border-zinc-800 transition-colors"
+                                  title="Permanently Delete Order"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
 
