@@ -140,16 +140,33 @@ export async function POST(request: Request) {
     const srResponse = await createShiprocketOrder(payload);
 
     // 5. Update Supabase Order record with Shiprocket IDs
-    const { error: updateError } = await supabaseAdmin
+    const updateData: any = {
+      shiprocket_order_id: srResponse.orderId.toString(),
+      shiprocket_shipment_id: srResponse.shipmentId.toString(),
+      shipment_status: 'created',
+    };
+
+    if (srResponse.courierName) updateData.courier_name = srResponse.courierName;
+    if (srResponse.awbCode) updateData.shiprocket_awb_code = srResponse.awbCode;
+
+    let { error: updateError } = await supabaseAdmin
       .from('orders')
-      .update({
+      .update(updateData)
+      .eq('id', orderId);
+
+    // Fallback if schema is missing optional courier_name column
+    if (updateError && updateError.message.includes('courier_name')) {
+      const fallbackData = {
         shiprocket_order_id: srResponse.orderId.toString(),
         shiprocket_shipment_id: srResponse.shipmentId.toString(),
         shipment_status: 'created',
-        courier_name: srResponse.courierName || null,
-        shiprocket_awb_code: srResponse.awbCode || null,
-      })
-      .eq('id', orderId);
+      };
+      const res = await supabaseAdmin
+        .from('orders')
+        .update(fallbackData)
+        .eq('id', orderId);
+      updateError = res.error;
+    }
 
     if (updateError) {
       console.error('Failed to save Shiprocket reference to database:', updateError);
