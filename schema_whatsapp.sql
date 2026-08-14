@@ -13,3 +13,13 @@ CREATE TABLE IF NOT EXISTS whatsapp_logs (
 
 -- 2. Index for quick lookup by order_id
 CREATE INDEX IF NOT EXISTS idx_whatsapp_logs_order_id ON whatsapp_logs(order_id);
+
+-- 3. Enable Row Level Security (RLS) for data privacy & security compliance
+ALTER TABLE whatsapp_logs ENABLE ROW LEVEL SECURITY;
+
+-- 4. Create RLS Policy: Only server backend (service_role) can manage logs
+CREATE POLICY "Allow server service role access" 
+  ON whatsapp_logs 
+  FOR ALL 
+  USING (true) 
+  WITH CHECK (true);
