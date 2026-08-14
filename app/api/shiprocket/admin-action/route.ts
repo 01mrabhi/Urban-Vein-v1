@@ -57,6 +57,18 @@ export async function POST(request: Request) {
           })
           .eq('id', orderId);
 
+        // Non-blocking trigger for WhatsApp Shipment Notification
+        try {
+          const appUrl = process.env.APP_URL || 'http://localhost:3000';
+          fetch(`${appUrl}/api/whatsapp/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, eventType: 'order_shipped' }),
+          }).catch((waErr) => console.error('Background WhatsApp tracking notification error:', waErr));
+        } catch (err) {
+          console.warn('WhatsApp tracking trigger skipped:', err);
+        }
+
         return NextResponse.json({
           success: true,
           message: `AWB ${awbResult.awbCode} assigned via ${awbResult.courierName}`,

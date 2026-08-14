@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     if (etd) updateData.estimated_delivery_date = etd;
     if (awbCode) updateData.tracking_url = `https://shiprocket.co/tracking/${awbCode}`;
 
-    let query = supabaseAdmin.from('orders').update(updateData);
+    let query = supabaseAdmin.from('orders').update(updateData).select('id');
 
     if (shiprocketOrderId) {
       query = query.eq('shiprocket_order_id', shiprocketOrderId);
@@ -123,10 +123,26 @@ export async function POST(request: Request) {
       query = query.eq('shiprocket_awb_code', awbCode);
     }
 
-    const { error: dbError } = await query;
+    const { data: updatedOrders, error: dbError } = await query;
 
     if (dbError) {
       console.error('Failed to update order status via tracking webhook:', dbError);
+    } else if (updatedOrders && updatedOrders.length > 0) {
+      // Trigger WhatsApp notification for shipped / delivered
+      const targetOrderId = updatedOrders[0].id;
+      const appUrl = process.env.APP_URL || 'http://localhost:3000';
+
+      let eventTypeToTrigger: string | null = null;
+      if (dbStatus === 'shipped') eventTypeToTrigger = 'order_shipped';
+      if (dbStatus === 'delivered') eventTypeToTrigger = 'order_delivered';
+
+      if (eventTypeToTrigger) {
+        fetch(`${appUrl}/api/whatsapp/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: targetOrderId, eventType: eventTypeToTrigger }),
+        }).catch((err) => console.error('Background WhatsApp notification error:', err));
+      }
     }
 
     return NextResponse.json(

@@ -242,6 +242,31 @@ export default function AdminDashboard() {
     }
   };
 
+  // Dispatch WhatsApp Notifications
+  const handleSendWhatsAppNotification = async (orderId: string, eventType: string) => {
+    setActionLoading(prev => ({ ...prev, [orderId]: `wa_${eventType}` }));
+    try {
+      const res = await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, eventType }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to dispatch WhatsApp notification');
+
+      showToast(`WhatsApp ${eventType.replace('_', ' ')} processed!`, 'success');
+
+      if (data.deepLink) {
+        window.open(data.deepLink, '_blank');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'WhatsApp trigger failed', 'error');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [orderId]: null }));
+    }
+  };
+
   // Open live tracking modal
   const handleOpenTrackingModal = async (order: any) => {
     setTrackingModalOrder(order);
@@ -906,6 +931,43 @@ export default function AdminDashboard() {
                                         </div>
                                       </div>
                                     )}
+                                  </div>
+
+                                  {/* WHATSAPP AUTOMATED DISPATCH HUB */}
+                                  <div className={`p-5 rounded-2xl border ${isDark ? 'bg-zinc-950/80 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'} space-y-3`}>
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                        <h4 className="text-xs font-black uppercase tracking-wider text-green-400">WhatsApp Notification Hub</h4>
+                                      </div>
+                                      <span className="text-[9px] font-bold text-zinc-500 uppercase">Automated & 1-Click Trigger</span>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                                      <button
+                                        onClick={() => handleSendWhatsAppNotification(order.id, 'order_confirmed')}
+                                        disabled={!!actionLoading[order.id]}
+                                        className="bg-green-600/10 hover:bg-green-600/20 text-green-400 border border-green-900/40 text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                                      >
+                                        💬 Send Order Confirmation
+                                      </button>
+
+                                      <button
+                                        onClick={() => handleSendWhatsAppNotification(order.id, 'order_shipped')}
+                                        disabled={!!actionLoading[order.id]}
+                                        className="bg-green-600/10 hover:bg-green-600/20 text-green-400 border border-green-900/40 text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                                      >
+                                        🚀 Send AWB Tracking Link
+                                      </button>
+
+                                      <button
+                                        onClick={() => handleSendWhatsAppNotification(order.id, 'order_delivered')}
+                                        disabled={!!actionLoading[order.id]}
+                                        className="bg-green-600/10 hover:bg-green-600/20 text-green-400 border border-green-900/40 text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                                      >
+                                        ✨ Send Delivery Alert
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               </td>
