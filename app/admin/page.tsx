@@ -339,6 +339,12 @@ export default function AdminDashboard() {
 
       if (!res.ok) throw new Error(data.error || 'Failed to push to Shiprocket');
 
+      setOrders(prev => prev.map(o => o.id === orderId ? {
+        ...o,
+        shiprocket_order_id: data.shiprocketOrderId ? data.shiprocketOrderId.toString() : o.shiprocket_order_id,
+        shiprocket_shipment_id: data.shiprocketShipmentId ? data.shiprocketShipmentId.toString() : o.shiprocket_shipment_id,
+      } : o));
+
       showToast('Order pushed to Shiprocket successfully!', 'success');
       fetchOrders();
     } catch (err: any) {
