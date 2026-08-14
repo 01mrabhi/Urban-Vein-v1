@@ -308,6 +308,22 @@ export default function CheckoutPage() {
         clearCart();
         showToast('Order submitted via WhatsApp!', 'success');
         router.push('/success');
+      } else if (formData.paymentMethod === 'cod') {
+        // Attempt background auto-sync to Shiprocket with COD payment method
+        try {
+          const appUrl = process.env.APP_URL || 'http://localhost:3000';
+          fetch(`${appUrl}/api/shiprocket/create-order`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: order.id }),
+          }).catch((err) => console.error('Background COD Shiprocket order sync failed:', err));
+        } catch (srErr) {
+          console.warn('Shiprocket COD trigger skipped:', srErr);
+        }
+
+        clearCart();
+        showToast('Cash on Delivery Order Placed Successfully!', 'success');
+        router.push(`/success?order_id=${order.id}&payment_method=cod`);
       }
 
     } catch (error: any) {
@@ -509,6 +525,34 @@ export default function CheckoutPage() {
                     )}
                   </div>
                 </div>
+
+                {/* Cash on Delivery (COD) Option */}
+                <div 
+                  onClick={() => setFormData({ ...formData, paymentMethod: 'cod' })}
+                  className={`cursor-pointer p-6 rounded-3xl border transition-all duration-300 ${
+                    formData.paymentMethod === 'cod' 
+                      ? 'bg-zinc-900/80 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.15)]' 
+                      : 'bg-zinc-950/40 border-zinc-900 hover:border-zinc-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-2xl ${formData.paymentMethod === 'cod' ? 'bg-amber-500 text-black' : 'bg-zinc-900 text-zinc-400'}`}>
+                        <Truck size={22} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-black text-sm uppercase tracking-wider">Cash on Delivery (COD)</h3>
+                          <span className="bg-amber-950/80 text-amber-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border border-amber-900/50">Pay at Doorstep</span>
+                        </div>
+                        <p className="text-xs text-zinc-500 font-medium mt-1">Pay cash directly to courier partner upon doorstep package handover</p>
+                      </div>
+                    </div>
+                    {formData.paymentMethod === 'cod' && (
+                      <CheckCircle2 size={22} className="text-amber-500 flex-shrink-0" />
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center gap-3">
@@ -519,7 +563,11 @@ export default function CheckoutPage() {
               <button 
                 disabled={loading}
                 type="submit" 
-                className={`w-full ${formData.paymentMethod === 'whatsapp' ? 'bg-green-600 shadow-[0_20px_50px_rgba(22,163,74,0.3)]' : 'bg-red-600 shadow-[0_20px_50px_rgba(220,38,38,0.3)]'} disabled:bg-zinc-800 disabled:cursor-not-allowed text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all group`}
+                className={`w-full ${
+                  formData.paymentMethod === 'whatsapp' ? 'bg-green-600 shadow-[0_20px_50px_rgba(22,163,74,0.3)]' : 
+                  formData.paymentMethod === 'cod' ? 'bg-amber-500 text-black shadow-[0_20px_50px_rgba(245,158,11,0.3)]' :
+                  'bg-red-600 text-white shadow-[0_20px_50px_rgba(220,38,38,0.3)]'
+                } disabled:bg-zinc-800 disabled:cursor-not-allowed py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all group`}
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
@@ -528,7 +576,9 @@ export default function CheckoutPage() {
                   </span>
                 ) : (
                   <>
-                    {formData.paymentMethod === 'whatsapp' ? 'Checkout via WhatsApp' : `Pay ₹${total.toLocaleString()} with Razorpay`} 
+                    {formData.paymentMethod === 'whatsapp' ? 'Checkout via WhatsApp' : 
+                     formData.paymentMethod === 'cod' ? 'Confirm COD Order' :
+                     `Pay ₹${total.toLocaleString()} with Razorpay`} 
                     <ChevronRight size={20} className="group-hover:translate-x-2 transition-transform" />
                   </>
                 )}

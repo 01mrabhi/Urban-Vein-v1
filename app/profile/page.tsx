@@ -307,6 +307,13 @@ export default function ProfilePage() {
                               </div>
 
                               <div className="flex items-center gap-3">
+                                <Link
+                                  href={`/track?order_id=${order.id}`}
+                                  className="text-[10px] font-black uppercase tracking-widest bg-red-600/10 hover:bg-red-600/20 text-red-500 hover:text-red-400 px-3 py-1.5 rounded-lg border border-red-900/30 transition-all flex items-center gap-1.5"
+                                >
+                                  🚚 Track Live Package
+                                </Link>
+
                                 <button
                                   onClick={() => {
                                     const msg = encodeURIComponent(`Hi Urban Vein, I need a tracking update on Order #ORD-${order.id.slice(0, 8).toUpperCase()}`);

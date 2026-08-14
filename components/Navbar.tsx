@@ -74,6 +74,7 @@ export default function Navbar() {
         {!isCheckout ? (
           <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-12">
             <Link href="/#shop" className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-white transition-all hover:scale-110">Shop</Link>
+            <Link href="/track" className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all hover:scale-110 ${pathname === '/track' ? 'text-red-600' : 'text-zinc-400 hover:text-white'}`}>Track Order</Link>
             <Link href="/help" className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all hover:scale-110 ${pathname === '/help' ? 'text-red-600' : 'text-zinc-400 hover:text-white'}`}>Support</Link>
             <Link href="/lookbook" className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-white transition-all hover:scale-110">Lookbook</Link>
           </div>
@@ -195,6 +196,7 @@ export default function Navbar() {
                 </div>
               )}
               <Link onClick={() => setIsMobileMenuOpen(false)} href="/#shop" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Shop</Link>
+              <Link onClick={() => setIsMobileMenuOpen(false)} href="/track" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Track Order</Link>
               <Link onClick={() => setIsMobileMenuOpen(false)} href="/help" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Support</Link>
               <Link onClick={() => setIsMobileMenuOpen(false)} href="/lookbook" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Lookbook</Link>
               <Link onClick={() => setIsMobileMenuOpen(false)} href="/profile" className="text-4xl xs:text-5xl font-black uppercase tracking-tighter text-white hover:text-red-600 transition-colors italic">Profile</Link>

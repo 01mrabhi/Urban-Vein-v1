@@ -48,7 +48,7 @@ export function generateWhatsAppMessage(eventType: WhatsAppEventType, data: What
     case 'order_shipped': {
       const courier = data.courierName || 'Delhivery / BlueDart Express';
       const awb = data.awbCode || 'Pending';
-      const trackLink = data.trackingUrl || (data.awbCode ? `https://shiprocket.co/tracking/${data.awbCode}` : 'https://www.urbanvein.in/profile');
+      const trackLink = data.awbCode ? `https://www.urbanvein.in/track?awb=${data.awbCode}` : 'https://www.urbanvein.in/track';
 
       return (
         `🚀 *URBAN VEIN - PACKAGE DISPATCHED*\n\n` +
