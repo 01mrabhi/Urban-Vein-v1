@@ -9,7 +9,8 @@ import {
   CreditCard,
   MessageSquare,
   CheckCircle2,
-  Lock
+  Lock,
+  Truck
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useCart } from '../../context/CartContext';
