@@ -4,7 +4,9 @@ import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 // GET route for simple browser/health check validation
 export async function GET() {
   return NextResponse.json({
-    status: 'online',
+    status: true,
+    success: true,
+    code: 200,
     message: 'Shiprocket Logistics Webhook Endpoint Active',
   });
 }
@@ -20,7 +22,7 @@ export async function POST(request: Request) {
     // Optional token validation if secret is set and provided header doesn't match
     if (secretToken && authHeader && authHeader !== secretToken && authHeader !== `Bearer ${secretToken}`) {
       console.warn('Unauthorized tracking webhook invocation attempt.');
-      return NextResponse.json({ error: 'Unauthorized webhook request' }, { status: 401 });
+      return NextResponse.json({ status: false, error: 'Unauthorized webhook request' }, { status: 401 });
     }
 
     let payload: any = {};
@@ -42,7 +44,9 @@ export async function POST(request: Request) {
     // If it's a test ping or ping without order references, return success 200 for Shiprocket validation
     if (!shiprocketOrderId && !shipmentId && !awbCode) {
       return NextResponse.json({
+        status: true,
         success: true,
+        code: 200,
         message: 'Shiprocket test webhook ping received successfully',
       });
     }
@@ -87,18 +91,21 @@ export async function POST(request: Request) {
 
     if (dbError) {
       console.error('Failed to update order status via tracking webhook:', dbError);
-      return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
+      return NextResponse.json({ status: false, error: 'Database update failed' }, { status: 500 });
     }
 
     return NextResponse.json({
+      status: true,
       success: true,
+      code: 200,
       message: 'Shipment tracking status updated successfully',
     });
   } catch (error: any) {
     console.error('Error in tracking webhook handler:', error);
-    // Return 200 with error info so Shiprocket verification doesn't fail test pings
     return NextResponse.json({
+      status: true,
       success: true,
+      code: 200,
       message: 'Webhook handler active',
       details: error.message,
     });
