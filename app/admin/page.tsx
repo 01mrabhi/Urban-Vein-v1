@@ -283,15 +283,17 @@ export default function AdminDashboard() {
     }
   };
 
-  // Update order status live in Supabase DB
+  // Update order status live in Supabase DB via Admin Service Role API
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: newStatus })
-        .eq('id', orderId);
+      const res = await fetch('/api/orders/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status: newStatus }),
+      });
 
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update order status');
 
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
       showToast(`Order status updated to ${newStatus.toUpperCase()}`, 'success');
