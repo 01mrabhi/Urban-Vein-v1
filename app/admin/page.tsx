@@ -712,8 +712,10 @@ export default function AdminDashboard() {
             </button>
           </div>
           
-          {/* ANALYTICS STAT CARDS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {activeTab === 'orders' ? (
+            <>
+              {/* ANALYTICS STAT CARDS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             
             {/* Total Revenue */}
             <div className={`p-6 rounded-3xl border relative overflow-hidden transition-all ${
@@ -1129,6 +1131,7 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+          </>
           ) : (
             /* PROMO CODES & COUPONS ENGINE HUB */
             <div className="space-y-6">
