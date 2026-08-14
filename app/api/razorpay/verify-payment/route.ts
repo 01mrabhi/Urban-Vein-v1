@@ -57,6 +57,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // Attempt non-blocking auto-sync to Shiprocket
+    try {
+      if (process.env.SHIPROCKET_EMAIL && process.env.SHIPROCKET_PASSWORD) {
+        const appUrl = process.env.APP_URL || 'http://localhost:3000';
+        fetch(`${appUrl}/api/shiprocket/create-order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: order_id }),
+        }).catch((err) => console.error('Background Shiprocket order sync failed:', err));
+      }
+    } catch (srErr) {
+      console.warn('Shiprocket auto-trigger skipped:', srErr);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Payment verified and order updated successfully',

@@ -50,6 +50,12 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   
+  // Shiprocket Actions State
+  const [actionLoading, setActionLoading] = useState<{ [key: string]: string | null }>({});
+  const [trackingModalOrder, setTrackingModalOrder] = useState<any | null>(null);
+  const [trackingDetails, setTrackingDetails] = useState<any | null>(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+
   // Security Guard States
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -175,6 +181,81 @@ export default function AdminDashboard() {
       showToast(`Order status updated to ${newStatus.toUpperCase()}`, 'success');
     } catch (err: any) {
       showToast(err.message || 'Failed to update order status', 'error');
+    }
+  };
+
+  // Push order to Shiprocket
+  const handlePushToShiprocket = async (orderId: string) => {
+    setActionLoading(prev => ({ ...prev, [orderId]: 'push' }));
+    try {
+      const res = await fetch('/api/shiprocket/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to push to Shiprocket');
+
+      showToast('Order pushed to Shiprocket successfully!', 'success');
+      fetchOrders();
+    } catch (err: any) {
+      showToast(err.message || 'Shiprocket push failed', 'error');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [orderId]: null }));
+    }
+  };
+
+  // Admin Shiprocket Actions (AWB, Label, Invoice, Pickup, Cancel)
+  const handleShiprocketAdminAction = async (action: string, order: any) => {
+    setActionLoading(prev => ({ ...prev, [order.id]: action }));
+    try {
+      const res = await fetch('/api/shiprocket/admin-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          orderId: order.id,
+          shipmentId: order.shiprocket_shipment_id,
+          shiprocketOrderId: order.shiprocket_order_id,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Action failed');
+
+      if (action === 'generate_label' && data.labelUrl) {
+        window.open(data.labelUrl, '_blank');
+        showToast('Shipping Label generated and opened', 'success');
+      } else if (action === 'generate_invoice' && data.invoiceUrl) {
+        window.open(data.invoiceUrl, '_blank');
+        showToast('Invoice PDF generated and opened', 'success');
+      } else {
+        showToast(data.message || 'Action executed successfully', 'success');
+      }
+
+      fetchOrders();
+    } catch (err: any) {
+      showToast(err.message || 'Shiprocket action failed', 'error');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [order.id]: null }));
+    }
+  };
+
+  // Open live tracking modal
+  const handleOpenTrackingModal = async (order: any) => {
+    setTrackingModalOrder(order);
+    setTrackingLoading(true);
+    setTrackingDetails(null);
+
+    try {
+      const res = await fetch(`/api/shiprocket/track?order_id=${order.id}`);
+      const data = await res.json();
+      setTrackingDetails(data);
+    } catch (err: any) {
+      showToast('Failed to fetch tracking data', 'error');
+    } finally {
+      setTrackingLoading(false);
     }
   };
 
@@ -726,9 +807,105 @@ export default function AdminDashboard() {
                                     )}
                                   </div>
 
-                                  <div className="pt-3 flex items-center gap-6 text-[10px] font-bold uppercase text-zinc-500">
+                                  <div className="pt-3 flex flex-wrap items-center gap-6 text-[10px] font-bold uppercase text-zinc-500 border-b border-zinc-800/60 pb-3">
                                     <span>Razorpay Payment ID: <strong className="text-white font-mono">{order.razorpay_payment_id || 'N/A'}</strong></span>
                                     <span>Razorpay Order ID: <strong className="text-white font-mono">{order.razorpay_order_id || 'N/A'}</strong></span>
+                                  </div>
+
+                                  {/* SHIPROCKET LOGISTICS HUB */}
+                                  <div className={`p-5 rounded-2xl border ${isDark ? 'bg-zinc-950/80 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'} space-y-4`}>
+                                    <div className="flex flex-wrap items-center justify-between gap-4">
+                                      <div className="flex items-center gap-2">
+                                        <Truck className="text-red-500" size={18} />
+                                        <h4 className="text-xs font-black uppercase tracking-wider text-white">Shiprocket Logistics Engine</h4>
+                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border ${
+                                          order.shiprocket_order_id ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30'
+                                        }`}>
+                                          {order.shiprocket_order_id ? '✓ Synced with Shiprocket' : 'Unsynced'}
+                                        </span>
+                                      </div>
+
+                                      <div className="flex items-center gap-2">
+                                        {!order.shiprocket_order_id ? (
+                                          <button
+                                            onClick={() => handlePushToShiprocket(order.id)}
+                                            disabled={actionLoading[order.id] === 'push'}
+                                            className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all shadow-[0_0_15px_rgba(220,38,38,0.3)] flex items-center gap-1.5"
+                                          >
+                                            {actionLoading[order.id] === 'push' ? 'Pushing...' : 'Push to Shiprocket'}
+                                          </button>
+                                        ) : (
+                                          <button
+                                            onClick={() => handleOpenTrackingModal(order)}
+                                            className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all flex items-center gap-1.5"
+                                          >
+                                            Live Track
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {order.shiprocket_order_id && (
+                                      <div className="space-y-3 pt-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-[10px]">
+                                          <div className="bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-800">
+                                            <span className="text-zinc-500 font-bold uppercase block text-[8px]">Shiprocket Order ID</span>
+                                            <strong className="text-white font-mono">{order.shiprocket_order_id}</strong>
+                                          </div>
+                                          <div className="bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-800">
+                                            <span className="text-zinc-500 font-bold uppercase block text-[8px]">Shipment ID</span>
+                                            <strong className="text-white font-mono">{order.shiprocket_shipment_id || 'N/A'}</strong>
+                                          </div>
+                                          <div className="bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-800">
+                                            <span className="text-zinc-500 font-bold uppercase block text-[8px]">AWB Code</span>
+                                            <strong className="text-red-400 font-mono">{order.shiprocket_awb_code || 'Pending AWB'}</strong>
+                                          </div>
+                                          <div className="bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-800">
+                                            <span className="text-zinc-500 font-bold uppercase block text-[8px]">Courier Partner</span>
+                                            <strong className="text-white">{order.courier_name || 'Unassigned'}</strong>
+                                          </div>
+                                        </div>
+
+                                        {/* Shiprocket Quick Action Controls */}
+                                        <div className="flex flex-wrap items-center gap-2 pt-2">
+                                          {!order.shiprocket_awb_code && (
+                                            <button
+                                              onClick={() => handleShiprocketAdminAction('assign_awb', order)}
+                                              disabled={!!actionLoading[order.id]}
+                                              className="bg-zinc-900 hover:bg-zinc-800 text-white text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-zinc-800 transition-colors"
+                                            >
+                                              {actionLoading[order.id] === 'assign_awb' ? 'Assigning...' : 'Assign AWB & Courier'}
+                                            </button>
+                                          )}
+
+                                          <button
+                                            onClick={() => handleShiprocketAdminAction('generate_label', order)}
+                                            disabled={!!actionLoading[order.id]}
+                                            className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-zinc-800 transition-colors flex items-center gap-1"
+                                          >
+                                            <Download size={12} />
+                                            Print Label
+                                          </button>
+
+                                          <button
+                                            onClick={() => handleShiprocketAdminAction('generate_invoice', order)}
+                                            disabled={!!actionLoading[order.id]}
+                                            className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-zinc-800 transition-colors flex items-center gap-1"
+                                          >
+                                            <Download size={12} />
+                                            Print Invoice
+                                          </button>
+
+                                          <button
+                                            onClick={() => handleShiprocketAdminAction('request_pickup', order)}
+                                            disabled={!!actionLoading[order.id]}
+                                            className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-zinc-800 transition-colors"
+                                          >
+                                            Request Pickup
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </td>
@@ -750,6 +927,115 @@ export default function AdminDashboard() {
 
         </div>
       </main>
+
+      {/* SHIPROCKET LIVE TRACKING MODAL */}
+      <AnimatePresence>
+        {trackingModalOrder && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setTrackingModalOrder(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#0f0f0f] border border-zinc-800 rounded-3xl p-6 sm:p-8 max-w-xl w-full text-white shadow-2xl relative max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-4 mb-6">
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight text-white flex items-center gap-2">
+                    <Truck className="text-red-500" size={20} />
+                    Live Shiprocket Tracking
+                  </h3>
+                  <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mt-0.5">
+                    Order ORD-{trackingModalOrder.id.slice(0, 8).toUpperCase()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setTrackingModalOrder(null)}
+                  className="w-8 h-8 rounded-full bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center font-black"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {trackingLoading ? (
+                <div className="py-12 text-center space-y-3">
+                  <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Connecting to Shiprocket Tracking Server...</p>
+                </div>
+              ) : trackingDetails ? (
+                <div className="space-y-6">
+                  {/* Status Banner */}
+                  <div className="bg-zinc-950 p-4 rounded-2xl border border-zinc-800 flex items-center justify-between">
+                    <div>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500 block">Current Status</span>
+                      <strong className="text-base font-black text-red-500 uppercase tracking-wide">
+                        {trackingDetails.currentStatus || 'In Transit'}
+                      </strong>
+                    </div>
+                    {trackingDetails.awbCode && (
+                      <div className="text-right">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500 block">AWB Code</span>
+                        <span className="text-xs font-mono font-bold text-white">{trackingDetails.awbCode}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Courier Details */}
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
+                      <span className="text-zinc-500 text-[9px] font-black uppercase block mb-1">Courier Partner</span>
+                      <p className="font-bold text-white">{trackingDetails.courierName || 'Delhivery / BlueDart'}</p>
+                    </div>
+                    <div className="bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
+                      <span className="text-zinc-500 text-[9px] font-black uppercase block mb-1">Estimated Delivery</span>
+                      <p className="font-bold text-green-400">{trackingDetails.edd || '3-5 Days'}</p>
+                    </div>
+                  </div>
+
+                  {/* Activity Timeline */}
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">Checkpoint Activity Logs</h4>
+                    <div className="space-y-3 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-zinc-800">
+                      {trackingDetails.activities && trackingDetails.activities.length > 0 ? (
+                        trackingDetails.activities.map((act: any, idx: number) => (
+                          <div key={idx} className="relative pl-8 flex flex-col gap-0.5">
+                            <span className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-red-600 border-2 border-black -translate-x-1/2"></span>
+                            <p className="text-xs font-bold text-white">{act.status || act.srStatus}</p>
+                            <p className="text-[10px] text-zinc-400">{act.location} • {act.date ? new Date(act.date).toLocaleString('en-IN') : ''}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-zinc-500 italic pl-8">No detailed tracking activities recorded yet.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {trackingDetails.awbCode && (
+                    <a
+                      href={`https://shiprocket.co/tracking/${trackingDetails.awbCode}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full bg-red-600 hover:bg-red-500 text-white font-black uppercase text-xs tracking-widest text-center py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)]"
+                    >
+                      Open Official Shiprocket Portal Tracking &rarr;
+                    </a>
+                  )}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-zinc-500 text-xs font-bold">
+                  No tracking information returned for this order.
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

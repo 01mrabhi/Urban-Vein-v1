@@ -357,7 +357,7 @@ export default function ProfilePage() {
                                   </div>
 
                                   {/* Shipping Address & Payment References */}
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                                     <div className="bg-zinc-900/30 p-4 rounded-xl border border-zinc-900">
                                       <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1 flex items-center gap-1">
                                         <Truck size={12} className="text-red-500" /> Shipping Address
@@ -388,6 +388,30 @@ export default function ProfilePage() {
                                       )}
                                       {!order.razorpay_payment_id && (
                                         <p className="text-xs text-zinc-400 italic">Method: {order.payment_method || 'WhatsApp Direct'}</p>
+                                      )}
+                                    </div>
+
+                                    <div className="bg-zinc-900/30 p-4 rounded-xl border border-zinc-900 space-y-2">
+                                      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1 flex items-center gap-1">
+                                        <Truck size={12} className="text-red-500" /> Shiprocket Logistics
+                                      </h4>
+                                      <div>
+                                        <p className="text-[9px] text-zinc-500 uppercase font-bold">Courier Partner</p>
+                                        <p className="text-xs font-bold text-white">{order.courier_name || 'Delhivery / BlueDart Express'}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-[9px] text-zinc-500 uppercase font-bold">AWB Tracking Code</p>
+                                        <p className="text-xs font-mono font-bold text-red-400">{order.shiprocket_awb_code || 'Assigned on Dispatch'}</p>
+                                      </div>
+                                      {order.shiprocket_awb_code && (
+                                        <a
+                                          href={order.tracking_url || `https://shiprocket.co/tracking/${order.shiprocket_awb_code}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-red-500 hover:text-red-400 mt-1"
+                                        >
+                                          Track Package Live &rarr;
+                                        </a>
                                       )}
                                     </div>
                                   </div>

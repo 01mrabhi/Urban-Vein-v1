@@ -44,6 +44,12 @@ export default function CheckoutPage() {
 
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [pincodeDetails, setPincodeDetails] = useState<{ city: string; state: string; location: string } | null>(null);
+  const [shiprocketInfo, setShiprocketInfo] = useState<{
+    serviceable: boolean;
+    courierName?: string;
+    etd?: string;
+    message?: string;
+  } | null>(null);
 
   const handlePincodeChange = async (val: string) => {
     const cleaned = val.replace(/\D/g, '').slice(0, 6);
@@ -52,10 +58,14 @@ export default function CheckoutPage() {
     if (cleaned.length === 6) {
       setPincodeLoading(true);
       try {
-        const res = await fetch(`https://api.postalpincode.in/pincode/${cleaned}`);
-        const data = await res.json();
-        if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
-          const po = data[0].PostOffice[0];
+        // Parallel fetch for Postal PIN details & Shiprocket serviceability
+        const [postalRes, srRes] = await Promise.allSettled([
+          fetch(`https://api.postalpincode.in/pincode/${cleaned}`).then(r => r.json()),
+          fetch(`/api/shiprocket/serviceability?pincode=${cleaned}`).then(r => r.json())
+        ]);
+
+        if (postalRes.status === 'fulfilled' && postalRes.value && postalRes.value[0]?.Status === 'Success' && postalRes.value[0]?.PostOffice?.length > 0) {
+          const po = postalRes.value[0].PostOffice[0];
           setPincodeDetails({
             city: po.District,
             state: po.State,
@@ -64,6 +74,18 @@ export default function CheckoutPage() {
         } else {
           setPincodeDetails(null);
         }
+
+        if (srRes.status === 'fulfilled' && srRes.value) {
+          const sr = srRes.value;
+          setShiprocketInfo({
+            serviceable: sr.serviceable !== false,
+            courierName: sr.fastestCourier?.courierName || 'Delhivery / BlueDart Express',
+            etd: sr.fastestCourier?.etd ? `${sr.fastestCourier.etd} Days` : '3-5 Business Days',
+            message: sr.message || 'Courier partner active'
+          });
+        } else {
+          setShiprocketInfo(null);
+        }
       } catch (e) {
         console.error('PIN code lookup error', e);
       } finally {
@@ -71,6 +93,7 @@ export default function CheckoutPage() {
       }
     } else {
       setPincodeDetails(null);
+      setShiprocketInfo(null);
     }
   };
 
@@ -405,12 +428,25 @@ export default function CheckoutPage() {
                     </div>
 
                     {pincodeDetails && (
-                      <div className="mt-2 text-[10px] font-bold text-green-400 bg-green-950/40 border border-green-900/50 rounded-xl p-3 flex items-center justify-between">
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                          Verified: {pincodeDetails.city}, {pincodeDetails.state}
-                        </span>
-                        <span className="text-[9px] text-zinc-400 font-normal">Express Shipping Available</span>
+                      <div className="mt-2 text-[10px] font-bold text-green-400 bg-green-950/40 border border-green-900/50 rounded-xl p-3 flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                            Verified: {pincodeDetails.city}, {pincodeDetails.state}
+                          </span>
+                          <span className="text-[9px] text-zinc-400 font-normal">Verified Location</span>
+                        </div>
+
+                        {shiprocketInfo && (
+                          <div className="pt-1.5 border-t border-green-900/40 flex items-center justify-between text-[9px]">
+                            <span className="text-zinc-300 font-bold uppercase tracking-wider flex items-center gap-1">
+                              🚀 Shiprocket Courier: <strong className="text-red-400">{shiprocketInfo.courierName}</strong>
+                            </span>
+                            <span className="bg-red-950/80 text-red-400 font-black px-2 py-0.5 rounded border border-red-900/50">
+                              EDD: {shiprocketInfo.etd}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
