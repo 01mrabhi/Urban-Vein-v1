@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       formattedPrice = `₹${num.toFixed(2)}`;
     }
 
-    const newProduct = {
+    let newProduct: any = {
       name,
       price: formattedPrice,
       description: description || '',
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       stock_quantity: parseInt(stock_quantity || '50', 10),
     };
 
-    const { data, error } = await supabaseAdmin
+    let { data, error } = await supabaseAdmin
       .from('products')
       .insert(newProduct)
       .select('*')
@@ -72,6 +72,27 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Error adding product to Supabase:', error);
+      // Auto retry without missing optional column if column doesn't exist in Supabase DB yet
+      if (error.message.includes("Could not find the '")) {
+        const match = error.message.match(/Could not find the '([^']+)' column/);
+        const missingCol = match ? match[1] : null;
+        if (missingCol && missingCol in newProduct) {
+          delete newProduct[missingCol];
+          const retry = await supabaseAdmin
+            .from('products')
+            .insert(newProduct)
+            .select('*')
+            .single();
+
+          if (!retry.error) {
+            return NextResponse.json({
+              success: true,
+              message: `Product "${name}" added! (Run update_products.sql to enable ${missingCol})`,
+              product: retry.data,
+            });
+          }
+        }
+      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -89,7 +110,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, ...updates } = body;
+    let { id, ...updates } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
@@ -104,7 +125,7 @@ export async function PUT(request: Request) {
       updates.price = formattedPrice;
     }
 
-    const { data, error } = await supabaseAdmin
+    let { data, error } = await supabaseAdmin
       .from('products')
       .update(updates)
       .eq('id', id)
@@ -112,6 +133,28 @@ export async function PUT(request: Request) {
       .single();
 
     if (error) {
+      // Auto retry without missing column if column doesn't exist in Supabase DB schema yet
+      if (error.message.includes("Could not find the '")) {
+        const match = error.message.match(/Could not find the '([^']+)' column/);
+        const missingCol = match ? match[1] : null;
+        if (missingCol && missingCol in updates) {
+          delete updates[missingCol];
+          const retry = await supabaseAdmin
+            .from('products')
+            .update(updates)
+            .eq('id', id)
+            .select('*')
+            .single();
+
+          if (!retry.error) {
+            return NextResponse.json({
+              success: true,
+              message: `Product updated! (Run update_products.sql in Supabase to enable ${missingCol})`,
+              product: retry.data,
+            });
+          }
+        }
+      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 

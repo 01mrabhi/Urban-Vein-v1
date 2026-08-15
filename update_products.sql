@@ -1,11 +1,18 @@
--- 1. Add image_back column if it doesn't exist
-ALTER TABLE products ADD COLUMN IF NOT EXISTS image_back text;
+-- Run this SQL in your Supabase SQL Editor: https://supabase.com/dashboard/project/dufbjrvievmuqnuhvanx/sql
+
+-- 1. Ensure all CMS product columns exist in Supabase DB
+ALTER TABLE products ADD COLUMN IF NOT EXISTS image_back TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS is_out_of_stock BOOLEAN DEFAULT FALSE;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS stock_quantity INTEGER DEFAULT 50;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS is_upcoming BOOLEAN DEFAULT FALSE;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS launch_date TIMESTAMPTZ;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS badge TEXT;
 
 -- 2. Clear existing products
 DELETE FROM products;
 
 -- 3. Insert new products
-INSERT INTO products (original_id, name, price, description, image, image_back, category, badge, action_type) VALUES
+INSERT INTO products (original_id, name, price, description, image, image_back, category, badge, is_out_of_stock, stock_quantity) VALUES
 (
   '1', 
   'Zoro Katana Tee', 
@@ -14,8 +21,9 @@ INSERT INTO products (original_id, name, price, description, image, image_back, 
   '/products/zoro_front.jpg', 
   '/products/zoro_back.jpg', 
   'Graphic Series', 
-  null, 
-  null
+  'NEW', 
+  false,
+  50
 ),
 (
   '2', 
@@ -26,7 +34,8 @@ INSERT INTO products (original_id, name, price, description, image, image_back, 
   '/products/panther_back.jpg', 
   'Limited Drops', 
   null, 
-  null
+  false,
+  50
 ),
 (
   '3', 
@@ -37,7 +46,8 @@ INSERT INTO products (original_id, name, price, description, image, image_back, 
   '/products/white_anime_back.jpg', 
   'Graphic Series', 
   null, 
-  null
+  false,
+  50
 ),
 (
   '4', 
@@ -48,7 +58,8 @@ INSERT INTO products (original_id, name, price, description, image, image_back, 
   '/products/batman_back.jpg', 
   'Oversized Collection', 
   null, 
-  null
+  false,
+  50
 ),
 (
   '5', 
@@ -59,7 +70,8 @@ INSERT INTO products (original_id, name, price, description, image, image_back, 
   '/products/csk_back.jpg', 
   'Essential Solids', 
   null, 
-  null
+  false,
+  50
 ),
 (
   '6',
@@ -70,7 +82,8 @@ INSERT INTO products (original_id, name, price, description, image, image_back, 
   '/products/vk_forever_back.jpg',
   'Graphic Series',
   null,
-  null
+  false,
+  50
 ),
 (
   '7',
@@ -81,7 +94,8 @@ INSERT INTO products (original_id, name, price, description, image, image_back, 
   '/products/dhoni_back.jpg',
   'Graphic Series',
   null,
-  null
+  false,
+  50
 ),
 (
   '8',
@@ -92,7 +106,8 @@ INSERT INTO products (original_id, name, price, description, image, image_back, 
   '/products/dhoni_white_back.jpg',
   'Oversized Collection',
   null,
-  null
+  false,
+  50
 ),
 (
   '9',
@@ -103,5 +118,6 @@ INSERT INTO products (original_id, name, price, description, image, image_back, 
   null,
   'Limited Drops',
   null,
-  null
+  false,
+  50
 );
