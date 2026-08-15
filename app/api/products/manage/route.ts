@@ -2,20 +2,64 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { PRODUCTS } from '../../../../lib/data';
 
-// GET: Fetch products list
-export async function GET() {
+// GET: Fetch products list or single product by ID (DB prioritized)
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (id) {
+      // Fetch single product by ID (prioritize Supabase DB)
+      const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+      const isIdUuid = UUID_REGEX.test(id);
+
+      let query = supabaseAdmin.from('products').select('*');
+      if (isIdUuid) {
+        query = query.eq('id', id);
+      } else {
+        query = query.or(`original_id.eq.${id},id.eq.${id},name.eq.${id}`);
+      }
+
+      const { data: dbProduct, error } = await query.maybeSingle();
+
+      if (!error && dbProduct) {
+        return NextResponse.json({
+          product: {
+            ...dbProduct,
+            id: dbProduct.id || dbProduct.original_id,
+            actionType: dbProduct.action_type || 'quick-add',
+          },
+          source: 'database',
+        });
+      }
+
+      // Fallback to static PRODUCTS list if not in Supabase DB
+      const localProduct = PRODUCTS.find((p) => p.id === id || p.original_id === id);
+      if (localProduct) {
+        return NextResponse.json({ product: localProduct, source: 'default_static' });
+      }
+
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    // Fetch all products (prioritize Supabase DB)
     const { data: dbProducts, error } = await supabaseAdmin
       .from('products')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error || !dbProducts || dbProducts.length === 0) {
-      // Fallback to initial PRODUCTS list if table is empty or error occurs
       return NextResponse.json({ products: PRODUCTS, source: 'default' });
     }
 
-    return NextResponse.json({ products: dbProducts, source: 'database' });
+    // Map database fields to standard Product interface
+    const mappedProducts = dbProducts.map((p) => ({
+      ...p,
+      id: p.id || p.original_id,
+      actionType: p.action_type || 'quick-add',
+    }));
+
+    return NextResponse.json({ products: mappedProducts, source: 'database' });
   } catch (err: any) {
     return NextResponse.json({ products: PRODUCTS, source: 'fallback_error', error: err.message });
   }

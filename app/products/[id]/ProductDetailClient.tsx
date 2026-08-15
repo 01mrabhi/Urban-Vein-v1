@@ -62,29 +62,24 @@ export default function ProductDetailClient({ productId }: { productId: string }
     async function fetchProduct() {
       setLoading(true);
       
-      // Prioritize local data for consistency with data.ts updates
-      const localProduct = PRODUCTS.find(p => p.id === id);
-      if (localProduct) {
-        setProduct(localProduct);
-        setLoading(false);
-        return;
+      try {
+        // Prioritize live database updates from API
+        const res = await fetch(`/api/products/manage?id=${encodeURIComponent(id)}`);
+        const data = await res.json();
+        
+        if (res.ok && data.product) {
+          setProduct(data.product);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Error fetching live product from API:', err);
       }
 
-      // Fallback to Supabase if not found locally
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('original_id', id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching product:', error);
-      } else if (data) {
-        setProduct({
-          ...data,
-          id: data.original_id,
-          actionType: data.action_type
-        });
+      // Fallback to static PRODUCTS array if API / Database fetch fails
+      const localProduct = PRODUCTS.find(p => p.id === id || p.original_id === id);
+      if (localProduct) {
+        setProduct(localProduct);
       }
       setLoading(false);
     }

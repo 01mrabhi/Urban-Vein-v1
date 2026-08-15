@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import ProductDetailClient from './ProductDetailClient';
+import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { PRODUCTS } from '../../../lib/data';
 
 type Props = {
@@ -8,7 +9,24 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const product = PRODUCTS.find((p) => p.id === id);
+  
+  let product: any = null;
+
+  try {
+    const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    const isIdUuid = UUID_REGEX.test(id);
+
+    let query = supabaseAdmin.from('products').select('*');
+    if (isIdUuid) query = query.eq('id', id);
+    else query = query.or(`original_id.eq.${id},id.eq.${id},name.eq.${id}`);
+
+    const { data } = await query.maybeSingle();
+    if (data) product = data;
+  } catch (_) {}
+
+  if (!product) {
+    product = PRODUCTS.find((p) => p.id === id || p.original_id === id);
+  }
 
   if (!product) {
     return {
