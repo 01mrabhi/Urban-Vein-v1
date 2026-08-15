@@ -125,43 +125,78 @@ export async function PUT(request: Request) {
       updates.price = formattedPrice;
     }
 
-    let { data, error } = await supabaseAdmin
-      .from('products')
-      .update(updates)
-      .eq('id', id)
-      .select('*')
-      .single();
+    const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    const isIdUuid = UUID_REGEX.test(id.toString());
+
+    const performUpdate = async (updatePayload: any) => {
+      if (isIdUuid) {
+        return await supabaseAdmin
+          .from('products')
+          .update(updatePayload)
+          .eq('id', id)
+          .select('*');
+      } else {
+        const matchName = updates.name || id;
+        return await supabaseAdmin
+          .from('products')
+          .update(updatePayload)
+          .or(`original_id.eq.${id},name.eq.${matchName}`)
+          .select('*');
+      }
+    };
+
+    let { data, error } = await performUpdate(updates);
+
+    // Auto retry without missing column if column doesn't exist in Supabase DB schema yet
+    if (error && error.message.includes("Could not find the '")) {
+      const match = error.message.match(/Could not find the '([^']+)' column/);
+      const missingCol = match ? match[1] : null;
+      if (missingCol && missingCol in updates) {
+        delete updates[missingCol];
+        const retry = await performUpdate(updates);
+        data = retry.data;
+        error = retry.error;
+      }
+    }
+
+    // If update affected 0 rows (e.g. item not yet in DB), insert it as a new DB row!
+    if (!error && (!data || data.length === 0) && updates.name && updates.image) {
+      const newProduct = {
+        original_id: id.toString(),
+        name: updates.name,
+        price: updates.price || '₹499.00',
+        description: updates.description || '',
+        image: updates.image,
+        image_back: updates.image_back || null,
+        category: updates.category || 'Oversized Collection',
+        badge: updates.badge || 'NEW',
+        is_upcoming: Boolean(updates.is_upcoming),
+        is_out_of_stock: Boolean(updates.is_out_of_stock),
+      };
+
+      const insertRes = await supabaseAdmin
+        .from('products')
+        .insert(newProduct)
+        .select('*')
+        .single();
+
+      if (!insertRes.error) {
+        return NextResponse.json({
+          success: true,
+          message: `Product "${updates.name}" saved to database!`,
+          product: insertRes.data,
+        });
+      }
+    }
 
     if (error) {
-      // Auto retry without missing column if column doesn't exist in Supabase DB schema yet
-      if (error.message.includes("Could not find the '")) {
-        const match = error.message.match(/Could not find the '([^']+)' column/);
-        const missingCol = match ? match[1] : null;
-        if (missingCol && missingCol in updates) {
-          delete updates[missingCol];
-          const retry = await supabaseAdmin
-            .from('products')
-            .update(updates)
-            .eq('id', id)
-            .select('*')
-            .single();
-
-          if (!retry.error) {
-            return NextResponse.json({
-              success: true,
-              message: `Product updated! (Run update_products.sql in Supabase to enable ${missingCol})`,
-              product: retry.data,
-            });
-          }
-        }
-      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
       message: `Product updated successfully`,
-      product: data,
+      product: data && data[0] ? data[0] : null,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -178,10 +213,17 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin
-      .from('products')
-      .delete()
-      .eq('id', id);
+    const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    const isIdUuid = UUID_REGEX.test(id);
+
+    let query = supabaseAdmin.from('products').delete();
+    if (isIdUuid) {
+      query = query.eq('id', id);
+    } else {
+      query = query.or(`original_id.eq.${id},name.eq.${id}`);
+    }
+
+    const { error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
