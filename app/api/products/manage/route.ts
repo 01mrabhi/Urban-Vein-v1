@@ -50,16 +50,19 @@ export async function POST(request: Request) {
       formattedPrice = `₹${num.toFixed(2)}`;
     }
 
+    const cleanLaunchDate = (launch_date && typeof launch_date === 'string' && launch_date.trim() !== '') ? launch_date : null;
+    const cleanImageBack = (image_back && typeof image_back === 'string' && image_back.trim() !== '') ? image_back : null;
+
     let newProduct: any = {
       name,
       price: formattedPrice,
       description: description || '',
       image,
-      image_back: image_back || null,
+      image_back: cleanImageBack,
       category: category || 'Oversized Collection',
       badge: badge || (is_upcoming ? 'UPCOMING DROP' : is_out_of_stock ? 'OUT OF STOCK' : 'NEW'),
       is_upcoming: Boolean(is_upcoming),
-      launch_date: launch_date || null,
+      launch_date: cleanLaunchDate,
       is_out_of_stock: Boolean(is_out_of_stock),
       stock_quantity: parseInt(stock_quantity || '50', 10),
     };
@@ -123,6 +126,19 @@ export async function PUT(request: Request) {
         formattedPrice = `₹${num.toFixed(2)}`;
       }
       updates.price = formattedPrice;
+    }
+
+    // Sanitize empty string launch_date to null to avoid TIMESTAMPTZ syntax errors
+    if ('launch_date' in updates) {
+      if (!updates.launch_date || typeof updates.launch_date !== 'string' || updates.launch_date.trim() === '') {
+        updates.launch_date = null;
+      }
+    }
+
+    if ('image_back' in updates) {
+      if (!updates.image_back || typeof updates.image_back !== 'string' || updates.image_back.trim() === '') {
+        updates.image_back = null;
+      }
     }
 
     const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
