@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { supabase } from '../../../../lib/supabase';
 import { PRODUCTS } from '../../../../lib/data';
 
 export const dynamic = 'force-dynamic';
@@ -16,16 +17,29 @@ export async function GET(request: Request) {
       const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
       const isIdUuid = UUID_REGEX.test(id);
 
-      let query = supabaseAdmin.from('products').select('*');
-      if (isIdUuid) {
-        query = query.eq('id', id);
-      } else {
-        query = query.or(`original_id.eq.${id},id.eq.${id},name.eq.${id}`);
+      let dbProduct = null;
+
+      // Try supabaseAdmin first
+      try {
+        let query = supabaseAdmin.from('products').select('*');
+        if (isIdUuid) query = query.eq('id', id);
+        else query = query.or(`original_id.eq.${id},id.eq.${id},name.eq.${id}`);
+        const { data } = await query.maybeSingle();
+        if (data) dbProduct = data;
+      } catch (_) {}
+
+      // Try anon supabase client if admin client returned null
+      if (!dbProduct) {
+        try {
+          let query = supabase.from('products').select('*');
+          if (isIdUuid) query = query.eq('id', id);
+          else query = query.or(`original_id.eq.${id},id.eq.${id},name.eq.${id}`);
+          const { data } = await query.maybeSingle();
+          if (data) dbProduct = data;
+        } catch (_) {}
       }
 
-      const { data: dbProduct, error } = await query.maybeSingle();
-
-      if (!error && dbProduct) {
+      if (dbProduct) {
         return NextResponse.json({
           product: {
             ...dbProduct,
@@ -46,23 +60,36 @@ export async function GET(request: Request) {
     }
 
     // Fetch all products (prioritize Supabase DB)
-    const { data: dbProducts, error } = await supabaseAdmin
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
+    let dbProducts = null;
+    let dbError = null;
 
-    if (error || !dbProducts || dbProducts.length === 0) {
-      return NextResponse.json({ products: PRODUCTS, source: 'default' });
+    const resAdmin = await supabaseAdmin.from('products').select('*').order('created_at', { ascending: false });
+    if (!resAdmin.error && resAdmin.data && resAdmin.data.length > 0) {
+      dbProducts = resAdmin.data;
+    } else {
+      dbError = resAdmin.error;
+      const resAnon = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (!resAnon.error && resAnon.data && resAnon.data.length > 0) {
+        dbProducts = resAnon.data;
+        dbError = null;
+      }
     }
 
-    // Map database fields to standard Product interface
-    const mappedProducts = dbProducts.map((p) => ({
-      ...p,
-      id: p.id || p.original_id,
-      actionType: p.action_type || 'quick-add',
-    }));
+    if (dbProducts && dbProducts.length > 0) {
+      const mappedProducts = dbProducts.map((p) => ({
+        ...p,
+        id: p.id || p.original_id,
+        actionType: p.action_type || 'quick-add',
+      }));
+      return NextResponse.json({ products: mappedProducts, source: 'database' });
+    }
 
-    return NextResponse.json({ products: mappedProducts, source: 'database' });
+    return NextResponse.json({
+      products: PRODUCTS,
+      source: 'default_fallback',
+      dbError: dbError ? dbError.message : 'No products found in database',
+      hasServiceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    });
   } catch (err: any) {
     return NextResponse.json({ products: PRODUCTS, source: 'fallback_error', error: err.message });
   }
