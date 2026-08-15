@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { PRODUCTS } from '../../../../lib/data';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // GET: Fetch products list or single product by ID (DB prioritized)
 export async function GET(request: Request) {
   try {

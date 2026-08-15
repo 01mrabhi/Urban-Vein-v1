@@ -233,7 +233,7 @@ export default function AdminDashboard() {
   const fetchCmsProducts = async () => {
     setProductsLoading(true);
     try {
-      const res = await fetch('/api/products/manage');
+      const res = await fetch('/api/products/manage', { cache: 'no-store' });
       const data = await res.json();
       if (res.ok) {
         setCmsProducts(data.products || []);

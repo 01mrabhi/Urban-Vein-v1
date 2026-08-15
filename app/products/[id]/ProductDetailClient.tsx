@@ -64,7 +64,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
       
       try {
         // Prioritize live database updates from API
-        const res = await fetch(`/api/products/manage?id=${encodeURIComponent(id)}`);
+        const res = await fetch(`/api/products/manage?id=${encodeURIComponent(id)}`, { cache: 'no-store' });
         const data = await res.json();
         
         if (res.ok && data.product) {

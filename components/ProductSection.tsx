@@ -13,7 +13,7 @@ export default function ProductSection() {
   useEffect(() => {
     async function loadProducts() {
       try {
-        const res = await fetch('/api/products/manage');
+        const res = await fetch('/api/products/manage', { cache: 'no-store' });
         const data = await res.json();
         if (res.ok && data.products && data.products.length > 0) {
           setProducts(data.products);
