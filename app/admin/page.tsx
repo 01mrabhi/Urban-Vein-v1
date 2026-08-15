@@ -79,6 +79,8 @@ export default function AdminDashboard() {
     is_out_of_stock: false,
     stock_quantity: '50'
   });
+  const [uploadingFront, setUploadingFront] = useState(false);
+  const [uploadingBack, setUploadingBack] = useState(false);
 
   // Coupon Engine States
   const [coupons, setCoupons] = useState<any[]>([]);
@@ -250,6 +252,36 @@ export default function AdminDashboard() {
       fetchCoupons();
     }
   }, [activeTab]);
+
+  // Handle direct Image File Upload to /public/products/
+  const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image' | 'image_back') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (field === 'image') setUploadingFront(true);
+    else setUploadingBack(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+      setProductForm(prev => ({ ...prev, [field]: data.url }));
+      showToast(`Image uploaded! Set path to ${data.url}`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to upload image', 'error');
+    } finally {
+      if (field === 'image') setUploadingFront(false);
+      else setUploadingBack(false);
+    }
+  };
 
   // Handle Save Product (Create or Update)
   const handleSaveProduct = async (e: React.FormEvent) => {
@@ -1827,28 +1859,62 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Front Image URL *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. /products/zoro_front.jpg"
-                      value={productForm.image}
-                      onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-red-600"
-                    />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Front Image *</label>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. /products/zoro_front.jpg or https://..."
+                        value={productForm.image}
+                        onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
+                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-red-600"
+                      />
+                      <div className="flex items-center gap-2">
+                        <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] font-bold text-zinc-300 hover:text-white hover:border-zinc-700 transition-all">
+                          <span>{uploadingFront ? '⏳ Uploading...' : '📁 Upload File from Device'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageFileUpload(e, 'image')}
+                            className="hidden"
+                            disabled={uploadingFront}
+                          />
+                        </label>
+                        {productForm.image && (
+                          <span className="text-[9px] text-green-400 font-bold uppercase truncate max-w-[120px]">✓ Selected</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Back Image URL (Optional)</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. /products/zoro_back.jpg"
-                      value={productForm.image_back}
-                      onChange={(e) => setProductForm({ ...productForm, image_back: e.target.value })}
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-red-600"
-                    />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Back Image (Optional)</label>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        placeholder="e.g. /products/zoro_back.jpg or https://..."
+                        value={productForm.image_back}
+                        onChange={(e) => setProductForm({ ...productForm, image_back: e.target.value })}
+                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-red-600"
+                      />
+                      <div className="flex items-center gap-2">
+                        <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] font-bold text-zinc-300 hover:text-white hover:border-zinc-700 transition-all">
+                          <span>{uploadingBack ? '⏳ Uploading...' : '📁 Upload File from Device'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageFileUpload(e, 'image_back')}
+                            className="hidden"
+                            disabled={uploadingBack}
+                          />
+                        </label>
+                        {productForm.image_back && (
+                          <span className="text-[9px] text-green-400 font-bold uppercase truncate max-w-[120px]">✓ Selected</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
