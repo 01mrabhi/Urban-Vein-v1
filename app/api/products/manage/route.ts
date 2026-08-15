@@ -63,19 +63,12 @@ export async function GET(request: Request) {
     let dbProducts = null;
     let dbError = null;
 
-    let resAdmin = await supabaseAdmin.from('products').select('*').order('created_at', { ascending: false });
-    if (resAdmin.error && resAdmin.error.message.includes('created_at')) {
-      resAdmin = await supabaseAdmin.from('products').select('*');
-    }
-
+    const resAdmin = await supabaseAdmin.from('products').select('*');
     if (!resAdmin.error && resAdmin.data && resAdmin.data.length > 0) {
       dbProducts = resAdmin.data;
     } else {
       dbError = resAdmin.error;
-      let resAnon = await supabase.from('products').select('*').order('created_at', { ascending: false });
-      if (resAnon.error && resAnon.error.message.includes('created_at')) {
-        resAnon = await supabase.from('products').select('*');
-      }
+      const resAnon = await supabase.from('products').select('*');
       if (!resAnon.error && resAnon.data && resAnon.data.length > 0) {
         dbProducts = resAnon.data;
         dbError = null;
