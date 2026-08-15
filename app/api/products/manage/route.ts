@@ -76,12 +76,18 @@ export async function GET(request: Request) {
     }
 
     if (dbProducts && dbProducts.length > 0) {
-      const mappedProducts = dbProducts.map((p) => ({
-        ...p,
-        id: p.id || p.original_id,
-        actionType: p.action_type || 'quick-add',
-      }));
-      return NextResponse.json({ products: mappedProducts, source: 'database' });
+      const existingIds = new Set(dbProducts.map((p) => p.original_id || p.id));
+      const missingStaticProducts = PRODUCTS.filter((p) => !existingIds.has(p.id) && !existingIds.has(p.original_id));
+
+      const mappedProducts = [
+        ...dbProducts.map((p) => ({
+          ...p,
+          id: p.id || p.original_id,
+          actionType: p.action_type || 'quick-add',
+        })),
+        ...missingStaticProducts,
+      ];
+      return NextResponse.json({ products: mappedProducts, source: 'database_merged' });
     }
 
     return NextResponse.json({

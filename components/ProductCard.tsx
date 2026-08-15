@@ -92,22 +92,22 @@ export default function ProductCard({
 
         {/* Product Images */}
         <div className="w-full h-full relative">
-          {image_back && (
-            <Image 
-              src={image} 
-              alt={`${name} front`} 
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-700 lg:group-hover:scale-110 opacity-0 lg:group-hover:opacity-100" 
-            />
-          )}
           <Image 
-            src={image_back || image} 
+            src={image} 
             alt={name} 
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className={`w-full h-full object-cover transition-all duration-700 lg:group-hover:scale-110 ${image_back ? 'lg:group-hover:opacity-0' : ''} absolute inset-0`} 
           />
+          {image_back && (
+            <Image 
+              src={image_back} 
+              alt={`${name} back`} 
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="absolute inset-0 w-full h-full object-cover transition-all duration-700 lg:group-hover:scale-110 opacity-0 lg:group-hover:opacity-100" 
+            />
+          )}
         </div>
 
         {/* Action Button */}
