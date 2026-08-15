@@ -1648,7 +1648,6 @@ export default function AdminDashboard() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
-            onClick={() => setIsCreateModalOpen(false)}
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
@@ -1791,7 +1790,6 @@ export default function AdminDashboard() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
-            onClick={() => setIsAddProductModalOpen(false)}
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
