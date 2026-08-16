@@ -11,6 +11,8 @@ export interface CartItem {
   color: string;
   quantity: number;
   category: string;
+  is_upcoming?: boolean;
+  is_out_of_stock?: boolean;
 }
 
 interface CartContextType {
@@ -52,6 +54,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items, isMounted]);
 
   const addToCart = (item: Omit<CartItem, 'cartItemId'>) => {
+    if (item.is_out_of_stock || item.is_upcoming) {
+      return;
+    }
     setItems(prev => {
       const cartItemId = `${item.id}-${item.size}-${item.color}`;
       const existingItem = prev.find(i => i.cartItemId === cartItemId);

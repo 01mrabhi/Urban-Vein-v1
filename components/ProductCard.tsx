@@ -143,7 +143,9 @@ export default function ProductCard({
                   size: 'L',
                   color: 'Phantom Black',
                   quantity: 1,
-                  category: 'Quick Add'
+                  category: 'Quick Add',
+                  is_upcoming: upcoming,
+                  is_out_of_stock: outOfStock
                 });
                 showToast(`Added ${name} to your bag`, 'success');
               }}

@@ -169,9 +169,16 @@ export default function CheckoutPage() {
     checkUser();
   }, [router]);
 
+  const hasInvalidCartItems = items.some(item => item.is_upcoming || item.is_out_of_stock);
+
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (hasInvalidCartItems) {
+      showToast('Your cart contains items that are out of stock or upcoming drops. Please remove them before proceeding.', 'error');
+      return;
+    }
+
     if (!user) {
       setIsLoginModalOpen(true);
       return;
@@ -400,6 +407,11 @@ export default function CheckoutPage() {
 
             {/* Checkout Form */}
             <form className="space-y-8" onSubmit={handlePurchase}>
+              {hasInvalidCartItems && (
+                <div className="bg-red-950/80 border border-red-600/50 p-4 rounded-2xl text-xs text-red-300 font-bold uppercase tracking-wider">
+                  ⚠️ Your cart contains items that are out of stock or upcoming drops. Please remove them from your cart to proceed with checkout.
+                </div>
+              )}
               
               {/* Shipping Details */}
               <div className="space-y-6">
@@ -609,9 +621,10 @@ export default function CheckoutPage() {
               </div>
 
               <button 
-                disabled={loading}
+                disabled={loading || hasInvalidCartItems}
                 type="submit" 
                 className={`w-full ${
+                  hasInvalidCartItems ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed shadow-none' :
                   formData.paymentMethod === 'whatsapp' ? 'bg-green-600 shadow-[0_20px_50px_rgba(22,163,74,0.3)]' : 
                   formData.paymentMethod === 'cod' ? 'bg-amber-500 text-black shadow-[0_20px_50px_rgba(245,158,11,0.3)]' :
                   'bg-red-600 text-white shadow-[0_20px_50px_rgba(220,38,38,0.3)]'

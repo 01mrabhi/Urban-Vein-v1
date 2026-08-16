@@ -23,6 +23,10 @@ interface ProductModalProps {
     description: string;
     image: string;
     category: string;
+    badge?: string;
+    is_upcoming?: boolean;
+    is_out_of_stock?: boolean;
+    stock_quantity?: number;
   } | null;
 }
 
@@ -56,9 +60,20 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
   const [showSizeChart, setShowSizeChart] = useState(false);
   const liked = product ? isLiked(product.id) : false;
 
+  const isOutOfStock = Boolean(product?.is_out_of_stock) || product?.badge === 'OUT OF STOCK' || (typeof product?.stock_quantity === 'number' && product.stock_quantity <= 0);
+  const isUpcoming = Boolean(product?.is_upcoming) || product?.badge === 'UPCOMING DROP';
+
   if (!product) return null;
 
   const handleAddToCart = () => {
+    if (isOutOfStock) {
+      showToast(`${product.name} is currently out of stock.`, 'error');
+      return;
+    }
+    if (isUpcoming) {
+      showToast(`We will notify you when ${product.name} drops!`, 'info');
+      return;
+    }
     setIsAdding(true);
     setTimeout(() => {
       setIsAdding(false);
@@ -71,7 +86,9 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
         size: selectedSize,
         color: selectedColor.name,
         quantity: 1,
-        category: product.category || 'Collection'
+        category: product.category || 'Collection',
+        is_upcoming: isUpcoming,
+        is_out_of_stock: isOutOfStock
       });
       showToast(`Added ${product.name} to your bag`, 'success');
       onClose();
@@ -218,19 +235,39 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
 
                 {/* Actions */}
                 <div className="space-y-4 pt-4 border-t border-zinc-900">
-                  <button 
-                    onClick={handleAddToCart}
-                    disabled={isAdding}
-                    className="w-full bg-red-600 text-white py-6 rounded-3xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 shadow-2xl shadow-red-600/30 hover:bg-red-500 transition-all active:scale-95 disabled:opacity-50 group"
-                  >
-                    {isAdding ? (
-                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
-                        <Plus size={20} />
-                      </motion.div>
-                    ) : (
-                      <><ShoppingCart size={18} className="group-hover:translate-x-1 transition-transform" /> Add to Cart</>
-                    )}
-                  </button>
+                  {isOutOfStock ? (
+                    <button 
+                      disabled
+                      className="w-full bg-zinc-800 text-zinc-500 py-6 rounded-3xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 cursor-not-allowed"
+                    >
+                      Out of Stock
+                    </button>
+                  ) : isUpcoming ? (
+                    <button 
+                      onClick={() => {
+                        showToast(`We will notify you when ${product.name} drops!`, 'info');
+                        onClose();
+                      }}
+                      className="w-full bg-yellow-500 text-black py-6 rounded-3xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 shadow-2xl shadow-yellow-500/30 hover:bg-yellow-400 transition-all active:scale-95"
+                    >
+                      <Sparkles size={18} />
+                      Notify Me On Drop ✨
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={handleAddToCart}
+                      disabled={isAdding}
+                      className="w-full bg-red-600 text-white py-6 rounded-3xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 shadow-2xl shadow-red-600/30 hover:bg-red-500 transition-all active:scale-95 disabled:opacity-50 group"
+                    >
+                      {isAdding ? (
+                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
+                          <Plus size={20} />
+                        </motion.div>
+                      ) : (
+                        <><ShoppingCart size={18} className="group-hover:translate-x-1 transition-transform" /> Add to Cart</>
+                      )}
+                    </button>
+                  )}
                   <button 
                     onClick={() => {
                       toggleLike(product.id);

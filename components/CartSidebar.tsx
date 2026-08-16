@@ -107,6 +107,13 @@ export default function CartSidebar() {
                         <h3 className="text-sm font-black uppercase tracking-tight text-white leading-tight">
                           {item.name}
                         </h3>
+                        {(item.is_out_of_stock || item.is_upcoming) && (
+                          <span className={`inline-block text-[8px] font-black uppercase px-2 py-0.5 rounded mt-1 ${
+                            item.is_out_of_stock ? 'bg-red-950 text-red-400 border border-red-900/50' : 'bg-yellow-950 text-yellow-400 border border-yellow-900/50'
+                          }`}>
+                            {item.is_out_of_stock ? 'Out of Stock' : 'Upcoming Drop'}
+                          </span>
+                        )}
                         <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mt-1">
                           Size: {item.size} / Color: {item.color}
                         </p>

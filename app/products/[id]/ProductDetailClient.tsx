@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Plus, Minus, Heart, Shield, Package, RefreshCw, ChevronDown, ShoppingBag, X } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Heart, Shield, Package, RefreshCw, ChevronDown, ShoppingBag, X, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '../../../context/CartContext';
@@ -26,6 +26,9 @@ export default function ProductDetailClient({ productId }: { productId: string }
   const { isLiked, toggleLike } = useWishlist();
 
   const liked = product ? isLiked(product.id) : false;
+
+  const isOutOfStock = Boolean(product?.is_out_of_stock) || product?.badge === 'OUT OF STOCK' || (typeof product?.stock_quantity === 'number' && product.stock_quantity <= 0);
+  const isUpcoming = Boolean(product?.is_upcoming) || product?.badge === 'UPCOMING DROP';
 
   const [selectedSize, setSelectedSize] = useState('L');
   const [quantity, setQuantity] = useState(1);
@@ -106,6 +109,14 @@ export default function ProductDetailClient({ productId }: { productId: string }
   }
 
   const handleAddToCart = () => {
+    if (isOutOfStock) {
+      showToast(`${product.name} is currently out of stock.`, 'error');
+      return;
+    }
+    if (isUpcoming) {
+      showToast(`We will notify you when ${product.name} drops!`, 'info');
+      return;
+    }
     const numericPrice = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
     addToCart({
       id: `${product.id}-${selectedSize}`,
@@ -115,7 +126,9 @@ export default function ProductDetailClient({ productId }: { productId: string }
       size: selectedSize,
       color: 'Phantom Black',
       quantity,
-      category: product.category
+      category: product.category,
+      is_upcoming: isUpcoming,
+      is_out_of_stock: isOutOfStock
     });
     showToast(`Added ${product.name} to your bag`, 'success');
   };
@@ -175,10 +188,16 @@ export default function ProductDetailClient({ productId }: { productId: string }
                 />
               </motion.div>
               
-              {product.badge && (
+              {(product.badge || isOutOfStock || isUpcoming) && (
                 <div className="absolute top-8 left-8 z-10">
-                  <span className="bg-red-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-[0_0_30px_rgba(220,38,38,0.5)]">
-                    {product.badge}
+                  <span className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-lg ${
+                    isOutOfStock 
+                      ? 'bg-zinc-800 text-zinc-400 border border-zinc-700' 
+                      : isUpcoming 
+                      ? 'bg-yellow-500 text-black font-extrabold shadow-[0_0_30px_rgba(234,179,8,0.4)]' 
+                      : 'bg-red-600 text-white shadow-[0_0_30px_rgba(220,38,38,0.5)]'
+                  }`}>
+                    {isOutOfStock ? 'OUT OF STOCK' : isUpcoming ? 'UPCOMING DROP' : product.badge}
                   </span>
                 </div>
               )}
@@ -293,13 +312,30 @@ export default function ProductDetailClient({ productId }: { productId: string }
 
               {/* Action Buttons */}
               <div className="space-y-4 mb-12">
-                <button
-                  onClick={handleAddToCart}
-                  className="w-full bg-red-600 hover:bg-red-500 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(220,38,38,0.3)] transition-all transform active:scale-98"
-                >
-                  <ShoppingBag size={20} />
-                  Add to Cart — {product.price}
-                </button>
+                {isOutOfStock ? (
+                  <button
+                    disabled
+                    className="w-full bg-zinc-800 text-zinc-500 py-5 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 cursor-not-allowed shadow-none"
+                  >
+                    Out of Stock
+                  </button>
+                ) : isUpcoming ? (
+                  <button
+                    onClick={() => showToast(`We will notify you when ${product.name} drops!`, 'info')}
+                    className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-5 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(234,179,8,0.3)] transition-all transform active:scale-98"
+                  >
+                    <Sparkles size={20} />
+                    Notify Me On Drop ✨
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleAddToCart}
+                    className="w-full bg-red-600 hover:bg-red-500 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(220,38,38,0.3)] transition-all transform active:scale-98"
+                  >
+                    <ShoppingBag size={20} />
+                    Add to Cart — {product.price}
+                  </button>
+                )}
               </div>
 
               {/* Collapsible Accordions */}

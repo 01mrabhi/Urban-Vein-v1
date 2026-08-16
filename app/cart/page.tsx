@@ -146,6 +146,13 @@ export default function CartPage() {
                           <div>
                             <span className="text-[8px] font-black uppercase tracking-widest text-red-600 mb-2 block">&#47;&#47; {item.category}</span>
                             <h3 className="text-xl font-black uppercase tracking-tight text-white">{item.name}</h3>
+                            {(item.is_out_of_stock || item.is_upcoming) && (
+                              <span className={`inline-block text-[9px] font-black uppercase px-2.5 py-1 rounded-full mt-2 ${
+                                item.is_out_of_stock ? 'bg-red-950 text-red-400 border border-red-900/50' : 'bg-yellow-950 text-yellow-400 border border-yellow-900/50'
+                              }`}>
+                                {item.is_out_of_stock ? 'Out of Stock' : 'Upcoming Drop'}
+                              </span>
+                            )}
                           </div>
                           <p className="text-xl font-black tracking-tighter text-white">₹{item.price.toFixed(2)}</p>
                         </div>
