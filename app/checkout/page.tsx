@@ -49,7 +49,7 @@ export default function CheckoutPage() {
   } | null>(null);
 
   const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-  const shipping = 69.00;
+  const shipping = 89.00;
   const total = Math.max(0, subtotal + shipping - discountAmount);
 
   const handleApplyPromoCode = async () => {

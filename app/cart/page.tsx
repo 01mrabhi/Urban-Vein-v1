@@ -28,7 +28,7 @@ export default function CartPage() {
   const { items, updateQuantity, removeFromCart, subtotal, cartCount } = useCart();
   const [coupon, setCoupon] = useState('');
 
-  const shipping = subtotal === 0 ? 0 : 69.00;
+  const shipping = subtotal === 0 ? 0 : 89.00;
   const taxes = 0;
   const total = subtotal + shipping;
 

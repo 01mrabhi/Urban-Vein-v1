@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         fastestCourier: {
           courierName: 'Delhivery / BlueDart Express',
           etd: '3-5 Days',
-          rate: 69,
+          rate: 89,
           codAvailable: true,
         },
         couriers: [],
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
       fastestCourier: {
         courierName: 'Standard Express Courier',
         etd: '3-5 Days',
-        rate: 69,
+        rate: 89,
         codAvailable: true,
       },
       couriers: [],

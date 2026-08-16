@@ -39,7 +39,7 @@ const QUICK_LINKS = [
     title: 'Return Policy', 
     desc: 'No Return Policy. All sales are final on all streetwear items to maintain exclusivity and hygiene standards. Please check the size guide carefully before ordering.' 
   },
-  { icon: Truck, title: 'Shipping Info', desc: 'Flat ₹69 shipping across India with real-time tracking.' },
+  { icon: Truck, title: 'Shipping Info', desc: 'Flat ₹89 shipping across India with real-time tracking.' },
   { icon: Ruler, title: 'Size Guide', desc: 'Detailed dimensions for our techwear & oversize fits.' },
   { icon: HelpCircle, title: 'Contact Us', desc: '24/7 dedicated support for our global community.' }
 ];
@@ -288,7 +288,7 @@ export default function HelpPage() {
             <div className="flex items-center gap-8">
               <a href="#" className="hover:text-red-600 transition-colors">Privacy Policy</a>
               <a href="#" className="hover:text-red-600 transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-red-600 transition-colors">Instagram</a>
+              <a href="https://www.instagram.com/urbanveinofficial?igsh=d253YW05N2Y5Zm1r&utm_source=qr" target="_blank" rel="noopener noreferrer" className="hover:text-red-600 transition-colors">Instagram</a>
             </div>
             <p>© 2024 UrbanVein Industries. All rights reserved.</p>
           </div>

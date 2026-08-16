@@ -48,7 +48,7 @@ export default function Footer() {
               Crafting the future of street aesthetic through ambient technology and premium materiality.
             </p>
             <div className="flex items-center gap-6">
-              <a href="https://www.instagram.com/harkarclothing?igsh=ODdxYXdiZGtqajYx&utm_source=qr" target="_blank" rel="noopener noreferrer" className="text-zinc-600 hover:text-red-600 hover:scale-110 transition-all">
+              <a href="https://www.instagram.com/urbanveinofficial?igsh=d253YW05N2Y5Zm1r&utm_source=qr" target="_blank" rel="noopener noreferrer" className="text-zinc-600 hover:text-red-600 hover:scale-110 transition-all">
                 <Instagram size={20} />
               </a>
               <a href="https://www.facebook.com/share/1Ar2xa8dgX/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" className="text-zinc-600 hover:text-red-600 hover:scale-110 transition-all">
@@ -99,7 +99,7 @@ export default function Footer() {
             © 2024 URBANVEIN LABS. ALL RIGHTS RESERVED.
           </p>
           <div className="flex items-center gap-8 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-700">
-            <a href="https://www.instagram.com/harkarclothing?igsh=ODdxYXdiZGtqajYx&utm_source=qr" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400 transition-colors">Instagram</a>
+            <a href="https://www.instagram.com/urbanveinofficial?igsh=d253YW05N2Y5Zm1r&utm_source=qr" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400 transition-colors">Instagram</a>
             <a href="https://www.facebook.com/share/1Ar2xa8dgX/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400 transition-colors">Facebook</a>
           </div>
         </div>

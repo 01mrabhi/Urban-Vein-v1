@@ -17,7 +17,7 @@ export default function CartSidebar() {
     cartCount 
   } = useCart();
 
-  const shipping = subtotal === 0 ? 0 : 69.00;
+  const shipping = subtotal === 0 ? 0 : 89.00;
   const taxes = 0;
   const total = subtotal + shipping;
 
