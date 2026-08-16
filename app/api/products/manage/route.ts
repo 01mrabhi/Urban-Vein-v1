@@ -116,7 +116,8 @@ export async function POST(request: Request) {
       is_upcoming,
       launch_date,
       is_out_of_stock,
-      stock_quantity
+      stock_quantity,
+      original_id,
     } = body;
 
     if (!name || !price || !image) {
@@ -132,8 +133,10 @@ export async function POST(request: Request) {
 
     const cleanLaunchDate = (launch_date && typeof launch_date === 'string' && launch_date.trim() !== '') ? launch_date : null;
     const cleanImageBack = (image_back && typeof image_back === 'string' && image_back.trim() !== '') ? image_back : null;
+    const cleanOriginalId = original_id ? String(original_id) : Date.now().toString();
 
     let newProduct: any = {
+      original_id: cleanOriginalId,
       name,
       price: formattedPrice,
       description: description || '',
