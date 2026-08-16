@@ -63,31 +63,35 @@ export async function GET(request: Request) {
     let dbProducts = null;
     let dbError = null;
 
-    const resAdmin = await supabaseAdmin.from('products').select('*');
-    if (!resAdmin.error && resAdmin.data && resAdmin.data.length > 0) {
+    const resAdmin = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .order('display_order', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false });
+
+    if (!resAdmin.error && resAdmin.data) {
       dbProducts = resAdmin.data;
     } else {
       dbError = resAdmin.error;
-      const resAnon = await supabase.from('products').select('*');
-      if (!resAnon.error && resAnon.data && resAnon.data.length > 0) {
+      const resAnon = await supabase
+        .from('products')
+        .select('*')
+        .order('display_order', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false });
+      if (!resAnon.error && resAnon.data) {
         dbProducts = resAnon.data;
         dbError = null;
       }
     }
 
     if (dbProducts && dbProducts.length > 0) {
-      const existingIds = new Set(dbProducts.map((p) => p.original_id || p.id));
-      const missingStaticProducts = PRODUCTS.filter((p) => !existingIds.has(p.id) && !existingIds.has(p.original_id));
-
-      const mappedProducts = [
-        ...dbProducts.map((p) => ({
-          ...p,
-          id: p.id || p.original_id,
-          actionType: p.action_type || 'quick-add',
-        })),
-        ...missingStaticProducts,
-      ];
-      return NextResponse.json({ products: mappedProducts, source: 'database_merged' });
+      const mappedProducts = dbProducts.map((p, index) => ({
+        ...p,
+        id: p.id || p.original_id,
+        actionType: p.action_type || 'quick-add',
+        display_order: p.display_order !== undefined && p.display_order !== null ? p.display_order : index,
+      }));
+      return NextResponse.json({ products: mappedProducts, source: 'database' });
     }
 
     return NextResponse.json({
@@ -134,6 +138,7 @@ export async function POST(request: Request) {
     const cleanLaunchDate = (launch_date && typeof launch_date === 'string' && launch_date.trim() !== '') ? launch_date : null;
     const cleanImageBack = (image_back && typeof image_back === 'string' && image_back.trim() !== '') ? image_back : null;
     const cleanOriginalId = original_id ? String(original_id) : Date.now().toString();
+    const cleanDisplayOrder = typeof body.display_order === 'number' ? body.display_order : parseInt(body.display_order || '0', 10);
 
     let newProduct: any = {
       original_id: cleanOriginalId,
@@ -148,6 +153,7 @@ export async function POST(request: Request) {
       launch_date: cleanLaunchDate,
       is_out_of_stock: Boolean(is_out_of_stock),
       stock_quantity: parseInt(stock_quantity || '50', 10),
+      display_order: cleanDisplayOrder,
     };
 
     let { data, error } = await supabaseAdmin
@@ -192,10 +198,38 @@ export async function POST(request: Request) {
   }
 }
 
-// PUT: Update an existing product (stock toggle, price update, upcoming launch date)
+// PUT: Update an existing product or bulk reorder products
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
+
+    // Handle bulk reorder action
+    if (body.reorder && Array.isArray(body.reorder)) {
+      const reorderList: { id: string; display_order: number }[] = body.reorder;
+      const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+      for (const item of reorderList) {
+        if (!item.id) continue;
+        const isIdUuid = UUID_REGEX.test(item.id.toString());
+        if (isIdUuid) {
+          await supabaseAdmin
+            .from('products')
+            .update({ display_order: item.display_order })
+            .eq('id', item.id);
+        } else {
+          await supabaseAdmin
+            .from('products')
+            .update({ display_order: item.display_order })
+            .or(`original_id.eq.${item.id},id.eq.${item.id}`);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Product order updated successfully',
+      });
+    }
+
     let { id, ...updates } = body;
 
     if (!id) {

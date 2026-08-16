@@ -33,7 +33,9 @@ import {
   ToggleLeft,
   ToggleRight,
   Sparkles,
-  Calendar
+  Calendar,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
@@ -73,12 +75,15 @@ export default function AdminDashboard() {
     image: '',
     image_back: '',
     category: 'Oversized Collection',
+    custom_category: '',
     badge: 'NEW',
     is_upcoming: false,
     launch_date: '',
     is_out_of_stock: false,
-    stock_quantity: '50'
+    stock_quantity: '50',
+    display_order: 0
   });
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [uploadingFront, setUploadingFront] = useState(false);
   const [uploadingBack, setUploadingBack] = useState(false);
 
@@ -99,6 +104,16 @@ export default function AdminDashboard() {
   // Shiprocket Actions State
   const [actionLoading, setActionLoading] = useState<{ [key: string]: string | null }>({});
   const [trackingModalOrder, setTrackingModalOrder] = useState<any | null>(null);
+
+  const availableCategories = Array.from(
+    new Set([
+      'Oversized Collection',
+      'Graphic Series',
+      'Essential Solids',
+      'Limited Drops',
+      ...cmsProducts.map((p) => p.category).filter(Boolean),
+    ])
+  );
   const [trackingDetails, setTrackingDetails] = useState<any | null>(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
@@ -291,9 +306,18 @@ export default function AdminDashboard() {
       return;
     }
 
+    const finalCategory = (productForm.category === 'CUSTOM' || isCustomCategory)
+      ? (productForm.custom_category.trim() || 'Oversized Collection')
+      : productForm.category;
+
+    const payload = {
+      ...productForm,
+      category: finalCategory,
+    };
+
     try {
       const method = editingProduct ? 'PUT' : 'POST';
-      const body = editingProduct ? { id: editingProduct.id, ...productForm } : productForm;
+      const body = editingProduct ? { id: editingProduct.id, ...payload } : payload;
 
       const res = await fetch('/api/products/manage', {
         method,
@@ -351,6 +375,56 @@ export default function AdminDashboard() {
     }
   };
 
+  // Reorder Products (Move Up / Move Down)
+  const handleReorderProduct = async (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= cmsProducts.length) return;
+
+    const updated = [...cmsProducts];
+    const temp = updated[index];
+    updated[index] = updated[targetIndex];
+    updated[targetIndex] = temp;
+
+    const reorderPayload = updated.map((item, idx) => ({
+      id: item.id,
+      display_order: idx + 1,
+    }));
+
+    setCmsProducts(updated.map((item, idx) => ({ ...item, display_order: idx + 1 })));
+
+    try {
+      const res = await fetch('/api/products/manage', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reorder: reorderPayload }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update product order');
+      showToast('Product positions updated!', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update order', 'error');
+      fetchCmsProducts();
+    }
+  };
+
+  // Direct Position Index Update
+  const handleSetProductOrder = async (product: any, newOrder: number) => {
+    const targetOrder = Math.max(1, newOrder);
+    try {
+      const res = await fetch('/api/products/manage', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: product.id, display_order: targetOrder }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update position');
+      showToast(`Moved "${product.name}" to Position #${targetOrder}`, 'success');
+      fetchCmsProducts();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update position', 'error');
+    }
+  };
+
   // Delete Product Handler
   const handleDeleteProduct = async (id: string, name: string) => {
     if (!window.confirm(`Are you sure you want to delete product "${name}"?`)) return;
@@ -360,8 +434,9 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to delete product');
 
-      showToast(`Product "${name}" deleted`, 'info');
+      showToast(`Product "${name}" deleted permanently`, 'info');
       setCmsProducts(prev => prev.filter(p => p.id !== id));
+      fetchCmsProducts();
     } catch (err: any) {
       showToast(err.message || 'Failed to delete product', 'error');
     }
@@ -1470,6 +1545,7 @@ export default function AdminDashboard() {
 
                 <button
                   onClick={() => {
+                    setIsCustomCategory(false);
                     setEditingProduct(null);
                     setProductForm({
                       name: '',
@@ -1478,11 +1554,13 @@ export default function AdminDashboard() {
                       image: '',
                       image_back: '',
                       category: 'Oversized Collection',
+                      custom_category: '',
                       badge: 'NEW',
                       is_upcoming: false,
                       launch_date: '',
                       is_out_of_stock: false,
-                      stock_quantity: '50'
+                      stock_quantity: '50',
+                      display_order: cmsProducts.length + 1
                     });
                     setIsAddProductModalOpen(true);
                   }}
@@ -1508,6 +1586,7 @@ export default function AdminDashboard() {
                         <tr className={`border-b text-[10px] font-black uppercase tracking-widest ${
                           isDark ? 'border-zinc-900 text-zinc-500 bg-zinc-950/50' : 'border-zinc-200 text-zinc-400 bg-zinc-50'
                         }`}>
+                          <th className="py-4 px-6">Position</th>
                           <th className="py-4 px-6">Product</th>
                           <th className="py-4 px-6">Category</th>
                           <th className="py-4 px-6">Price</th>
@@ -1517,8 +1596,33 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-900 text-xs font-bold">
-                        {cmsProducts.map((p) => (
+                        {cmsProducts.map((p, index) => (
                           <tr key={p.id} className="hover:bg-zinc-900/30 transition-colors">
+                            <td className="py-4 px-6 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-black font-mono text-red-400 bg-red-950/60 border border-red-900/50 px-2.5 py-1 rounded-lg">
+                                  #{index + 1}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    disabled={index === 0}
+                                    onClick={() => handleReorderProduct(index, 'up')}
+                                    className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed text-zinc-300 border border-zinc-800 transition-colors"
+                                    title="Move Up (Show Higher on Storefront)"
+                                  >
+                                    <ArrowUp size={12} />
+                                  </button>
+                                  <button
+                                    disabled={index === cmsProducts.length - 1}
+                                    onClick={() => handleReorderProduct(index, 'down')}
+                                    className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed text-zinc-300 border border-zinc-800 transition-colors"
+                                    title="Move Down (Show Lower on Storefront)"
+                                  >
+                                    <ArrowDown size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
                             <td className="py-4 px-6">
                               <div className="flex items-center gap-3">
                                 <div className="w-12 h-14 relative rounded-xl overflow-hidden bg-zinc-950 border border-zinc-800 flex-shrink-0">
@@ -1572,6 +1676,7 @@ export default function AdminDashboard() {
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() => {
+                                    setIsCustomCategory(false);
                                     setEditingProduct(p);
                                     setProductForm({
                                       name: p.name,
@@ -1580,11 +1685,13 @@ export default function AdminDashboard() {
                                       image: p.image,
                                       image_back: p.image_back || '',
                                       category: p.category || 'Oversized Collection',
+                                      custom_category: '',
                                       badge: p.badge || 'NEW',
                                       is_upcoming: Boolean(p.is_upcoming),
                                       launch_date: p.launch_date || '',
                                       is_out_of_stock: Boolean(p.is_out_of_stock),
-                                      stock_quantity: (p.stock_quantity || 50).toString()
+                                      stock_quantity: (p.stock_quantity || 50).toString(),
+                                      display_order: p.display_order || 0
                                     });
                                     setIsAddProductModalOpen(true);
                                   }}
@@ -1845,15 +1952,33 @@ export default function AdminDashboard() {
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Category *</label>
                     <select
-                      value={productForm.category}
-                      onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                      value={isCustomCategory ? 'CUSTOM' : productForm.category}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === 'CUSTOM') {
+                          setIsCustomCategory(true);
+                        } else {
+                          setIsCustomCategory(false);
+                          setProductForm({ ...productForm, category: val });
+                        }
+                      }}
                       className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs font-bold uppercase text-white focus:outline-none focus:border-red-600"
                     >
-                      <option value="Oversized Collection">Oversized Collection</option>
-                      <option value="Graphic Series">Graphic Series</option>
-                      <option value="Essential Solids">Essential Solids</option>
-                      <option value="Limited Drops">Limited Drops</option>
+                      {availableCategories.map((cat) => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                      <option value="CUSTOM">+ Create Custom Category...</option>
                     </select>
+
+                    {(isCustomCategory || productForm.category === 'CUSTOM') && (
+                      <input
+                        type="text"
+                        placeholder="Enter custom category name (e.g. Acid Wash)..."
+                        value={productForm.custom_category || ''}
+                        onChange={(e) => setProductForm({ ...productForm, custom_category: e.target.value })}
+                        className="w-full mt-2 bg-zinc-950 border border-red-900/60 rounded-xl p-3 text-xs font-bold uppercase text-white focus:outline-none focus:border-red-600 placeholder:text-zinc-700 font-bold"
+                      />
+                    )}
                   </div>
                 </div>
 

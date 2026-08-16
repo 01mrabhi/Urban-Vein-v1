@@ -35,7 +35,14 @@ export default function ProductSection() {
     ? products 
     : products.filter(p => p.category === activeCategory);
 
-  const categoriesWithAll = ['All', ...CATEGORIES];
+  const dynamicCategories = Array.from(
+    new Set([
+      ...CATEGORIES,
+      ...products.map(p => p.category).filter(Boolean)
+    ])
+  );
+
+  const categoriesWithAll = ['All', ...dynamicCategories];
 
   return (
     <section id="shop" className="py-24 px-8 bg-zinc-950">

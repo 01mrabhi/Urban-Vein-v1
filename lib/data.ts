@@ -20,6 +20,7 @@ export type Product = {
   launch_date?: string;
   is_out_of_stock?: boolean;
   stock_quantity?: number;
+  display_order?: number;
 };
 
 export const PRODUCTS: Product[] = [

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS products (
   launch_date TIMESTAMPTZ,
   is_out_of_stock BOOLEAN DEFAULT FALSE,
   stock_quantity INTEGER DEFAULT 50,
+  display_order INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
