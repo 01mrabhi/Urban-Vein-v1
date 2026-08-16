@@ -179,29 +179,25 @@ export async function POST(request: Request) {
       .select('*')
       .single();
 
+    while (error && error.message.includes("Could not find the '")) {
+      const match = error.message.match(/Could not find the '([^']+)' column/);
+      const missingCol = match ? match[1] : null;
+      if (missingCol && missingCol in newProduct) {
+        delete newProduct[missingCol];
+        const retry = await supabaseAdmin
+          .from('products')
+          .insert(newProduct)
+          .select('*')
+          .single();
+        data = retry.data;
+        error = retry.error;
+      } else {
+        break;
+      }
+    }
+
     if (error) {
       console.error('Error adding product to Supabase:', error);
-      // Auto retry without missing optional column if column doesn't exist in Supabase DB yet
-      if (error.message.includes("Could not find the '")) {
-        const match = error.message.match(/Could not find the '([^']+)' column/);
-        const missingCol = match ? match[1] : null;
-        if (missingCol && missingCol in newProduct) {
-          delete newProduct[missingCol];
-          const retry = await supabaseAdmin
-            .from('products')
-            .insert(newProduct)
-            .select('*')
-            .single();
-
-          if (!retry.error) {
-            return NextResponse.json({
-              success: true,
-              message: `Product "${name}" added! (Run update_products.sql to enable ${missingCol})`,
-              product: retry.data,
-            });
-          }
-        }
-      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -225,20 +221,24 @@ export async function PUT(request: Request) {
       const reorderList: { id: string; display_order: number }[] = body.reorder;
       const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
-      for (const item of reorderList) {
-        if (!item.id) continue;
-        const isIdUuid = UUID_REGEX.test(item.id.toString());
-        if (isIdUuid) {
-          await supabaseAdmin
-            .from('products')
-            .update({ display_order: item.display_order })
-            .eq('id', item.id);
-        } else {
-          await supabaseAdmin
-            .from('products')
-            .update({ display_order: item.display_order })
-            .or(`original_id.eq.${item.id},id.eq.${item.id}`);
+      try {
+        for (const item of reorderList) {
+          if (!item.id) continue;
+          const isIdUuid = UUID_REGEX.test(item.id.toString());
+          if (isIdUuid) {
+            await supabaseAdmin
+              .from('products')
+              .update({ display_order: item.display_order })
+              .eq('id', item.id);
+          } else {
+            await supabaseAdmin
+              .from('products')
+              .update({ display_order: item.display_order })
+              .or(`original_id.eq.${item.id},id.eq.${item.id}`);
+          }
         }
+      } catch (err: any) {
+        console.warn('Reorder skipped because display_order column is missing in DB:', err?.message);
       }
 
       return NextResponse.json({
@@ -298,7 +298,7 @@ export async function PUT(request: Request) {
     let { data, error } = await performUpdate(updates);
 
     // Auto retry without missing column if column doesn't exist in Supabase DB schema yet
-    if (error && error.message.includes("Could not find the '")) {
+    while (error && error.message.includes("Could not find the '")) {
       const match = error.message.match(/Could not find the '([^']+)' column/);
       const missingCol = match ? match[1] : null;
       if (missingCol && missingCol in updates) {
@@ -306,12 +306,14 @@ export async function PUT(request: Request) {
         const retry = await performUpdate(updates);
         data = retry.data;
         error = retry.error;
+      } else {
+        break;
       }
     }
 
     // If update affected 0 rows (e.g. item not yet in DB), insert it as a new DB row!
     if (!error && (!data || data.length === 0) && updates.name && updates.image) {
-      const newProduct = {
+      let newProduct: any = {
         original_id: id.toString(),
         name: updates.name,
         price: updates.price || '₹499.00',
@@ -324,11 +326,26 @@ export async function PUT(request: Request) {
         is_out_of_stock: Boolean(updates.is_out_of_stock),
       };
 
-      const insertRes = await supabaseAdmin
+      let insertRes = await supabaseAdmin
         .from('products')
         .insert(newProduct)
         .select('*')
         .single();
+
+      while (insertRes.error && insertRes.error.message.includes("Could not find the '")) {
+        const match = insertRes.error.message.match(/Could not find the '([^']+)' column/);
+        const missingCol = match ? match[1] : null;
+        if (missingCol && missingCol in newProduct) {
+          delete newProduct[missingCol];
+          insertRes = await supabaseAdmin
+            .from('products')
+            .insert(newProduct)
+            .select('*')
+            .single();
+        } else {
+          break;
+        }
+      }
 
       if (!insertRes.error) {
         return NextResponse.json({
