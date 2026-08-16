@@ -63,22 +63,39 @@ export async function GET(request: Request) {
     let dbProducts = null;
     let dbError = null;
 
-    const resAdmin = await supabaseAdmin
+    let resAdmin = await supabaseAdmin
       .from('products')
       .select('*')
-      .order('display_order', { ascending: true, nullsFirst: false })
+      .order('display_order', { ascending: true })
       .order('created_at', { ascending: false });
 
-    if (!resAdmin.error && resAdmin.data) {
-      dbProducts = resAdmin.data;
-    } else {
-      dbError = resAdmin.error;
-      const resAnon = await supabase
+    // Fallback if display_order column does not exist in Supabase DB
+    if (resAdmin.error) {
+      console.warn('DB query with display_order failed, falling back to created_at:', resAdmin.error.message);
+      resAdmin = await supabaseAdmin
         .from('products')
         .select('*')
-        .order('display_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false });
-      if (!resAnon.error && resAnon.data) {
+    }
+
+    if (!resAdmin.error && resAdmin.data && resAdmin.data.length > 0) {
+      dbProducts = resAdmin.data;
+    } else {
+      if (resAdmin.error) dbError = resAdmin.error;
+      let resAnon = await supabase
+        .from('products')
+        .select('*')
+        .order('display_order', { ascending: true })
+        .order('created_at', { ascending: false });
+
+      if (resAnon.error) {
+        resAnon = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+      }
+
+      if (!resAnon.error && resAnon.data && resAnon.data.length > 0) {
         dbProducts = resAnon.data;
         dbError = null;
       }

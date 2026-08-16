@@ -36,7 +36,7 @@ const COLORS = [
   { id: 'blue', name: 'CORE BLUE', value: '#4A5568' },
 ];
 
-const SIZES = ['M', 'L', 'XL', 'XXL'];
+const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 
 const RECOMMENDED = [
   { id: 'r1', name: 'PHANTOM HOODIE', price: '₹2,999.00', image: '/products/hoodi1-min.jpg' },
@@ -378,6 +378,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                   </thead>
                   <tbody className="text-zinc-300">
                     {[
+                      { size: 'S', chest: '40', shoulder: '20', length: '27' },
                       { size: 'M', chest: '42', shoulder: '20.5', length: '27.5' },
                       { size: 'L', chest: '44', shoulder: '21', length: '28' },
                       { size: 'XL', chest: '46', shoulder: '21.5', length: '28.5' },

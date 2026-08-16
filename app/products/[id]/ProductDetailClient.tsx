@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import { PRODUCTS } from '../../../lib/data';
 
-const SIZES = ['M', 'L', 'XL', 'XXL'];
+const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 
 export default function ProductDetailClient({ productId }: { productId: string }) {
   const router = useRouter();
@@ -273,7 +273,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
                     Size Guide
                   </button>
                 </div>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-5 gap-2 sm:gap-3">
                   {SIZES.map((size) => (
                     <button
                       key={size}
@@ -417,6 +417,11 @@ export default function ProductDetailClient({ productId }: { productId: string }
                   <span>Size</span>
                   <span>Chest (in)</span>
                   <span>Length (in)</span>
+                </div>
+                <div className="grid grid-cols-3 p-3 border-b border-zinc-800/50 text-white font-bold bg-zinc-900/30">
+                  <span>Small (S)</span>
+                  <span>42&quot;</span>
+                  <span>28&quot;</span>
                 </div>
                 <div className="grid grid-cols-3 p-3 border-b border-zinc-800/50 text-white font-bold">
                   <span>Medium (M)</span>
