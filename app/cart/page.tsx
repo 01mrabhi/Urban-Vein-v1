@@ -33,9 +33,7 @@ export default function CartPage() {
   const total = subtotal + shipping;
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [address, setAddress] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -43,46 +41,6 @@ export default function CartPage() {
       setUser(user);
     });
   }, []);
-
-  const handleWhatsAppCheckout = () => {
-    if (!user) {
-      setIsLoginModalOpen(true);
-      return;
-    }
-    setIsAddressModalOpen(true);
-  };
-
-  const confirmWhatsAppOrder = () => {
-    if (!address.trim()) {
-      alert("Please enter your shipping address.");
-      return;
-    }
-
-    const adminPhone = "918264966094";
-    let message = "NEW ORDER REQUEST\n\n";
-    message += `CUSTOMER INFO:\n`;
-    message += `   - Email: ${user.email}\n`;
-    message += `   - Shipping Address: ${address}\n\n`;
-    
-    message += "ITEMS:\n";
-    items.forEach((item, index) => {
-      message += `${index + 1}. ${item.name}\n`;
-      message += `   - Size: ${item.size}\n`;
-      message += `   - Color: ${item.color}\n`;
-      message += `   - Qty: ${item.quantity}\n`;
-      message += `   - Price: INR ${item.price.toFixed(2)}\n\n`;
-    });
-    
-    message += "ORDER SUMMARY:\n";
-    message += `   Subtotal: INR ${subtotal.toFixed(2)}\n`;
-    message += `   Shipping: INR ${shipping.toFixed(2)}\n`;
-    message += `   Total: INR ${total.toFixed(2)}\n\n`;
-    message += "Payment Request: Please share the payment details to confirm my order.";
-
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/${adminPhone}?text=${encodedMessage}`, '_blank');
-    setIsAddressModalOpen(false);
-  };
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white selection:bg-red-600/30">
@@ -265,15 +223,15 @@ export default function CartPage() {
                         </button>
                       </div>
 
-                      <button
-                        onClick={handleWhatsAppCheckout}
-                        className="w-full bg-green-600 text-white py-6 rounded-3xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 shadow-2xl shadow-green-600/30 hover:bg-green-500 transition-all active:scale-95 group"
+                      <Link
+                        href="/checkout"
+                        className="w-full bg-red-600 hover:bg-red-500 text-white py-6 rounded-3xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 shadow-2xl shadow-red-600/30 transition-all active:scale-95 group"
                       >
-                        Order via WhatsApp <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                      </button>
+                        Proceed to Checkout <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                      </Link>
 
                       <p className="text-center text-[8px] font-black uppercase tracking-[0.3em] text-zinc-600 flex items-center justify-center gap-2">
-                        <ShieldCheck size={12} className="text-green-500" /> AES-256 Encrypted Connection
+                        <ShieldCheck size={12} className="text-red-500" /> Encrypted 256-Bit SSL Prepaid Checkout
                       </p>
                     </div>
                   </div>
@@ -329,59 +287,6 @@ export default function CartPage() {
           border-radius: 10px;
         }
       `}</style>
-      {/* Address Pop-up Modal */}
-      <AnimatePresence>
-        {isAddressModalOpen && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsAddressModalOpen(false)}
-              className="absolute inset-0 bg-black/90 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-[2.5rem] p-10 shadow-2xl z-10"
-            >
-              <button 
-                onClick={() => setIsAddressModalOpen(false)}
-                className="absolute top-6 right-6 text-zinc-500 hover:text-white transition-colors"
-              >
-                <X size={20} />
-              </button>
-
-              <div className="text-center mb-8">
-                <MapPin className="mx-auto text-red-600 mb-4" size={32} />
-                <h2 className="text-2xl font-black uppercase tracking-tight italic">Delivery <span className="text-red-600">Protocol</span></h2>
-                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Enter your destination coordinates</p>
-              </div>
-
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black tracking-widest uppercase text-zinc-500">Shipping Address</label>
-                  <textarea
-                    autoFocus
-                    placeholder="ENTER FULL STREET ADDRESS, CITY, STATE, AND PIN CODE"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-800 text-white p-6 rounded-2xl text-xs focus:outline-none focus:border-red-600 transition-all placeholder:text-zinc-700 font-bold uppercase tracking-widest min-h-[150px] resize-none"
-                  />
-                </div>
-
-                <button 
-                  onClick={confirmWhatsAppOrder}
-                  className="w-full bg-red-600 hover:bg-red-500 text-white font-black tracking-[0.2em] uppercase text-xs py-5 rounded-2xl transition-all shadow-[0_10px_30px_rgba(220,38,38,0.2)] active:scale-[0.98] flex items-center justify-center gap-3"
-                >
-                  Confirm & Open WhatsApp <ArrowRight size={16} />
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       <LoginModal 
         isOpen={isLoginModalOpen} 

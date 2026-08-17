@@ -336,34 +336,13 @@ export default function CheckoutPage() {
         });
         rzp.open();
 
-      } else if (formData.paymentMethod === 'whatsapp') {
-        const adminPhone = "918264966094";
-        let message = `*NEW ORDER: ORD-${order.id.slice(0, 8).toUpperCase()}*\n\n`;
-        
-        message += `*CLIENT DETAILS:*\n`;
-        message += `Name: ${fullName}\n`;
-        message += `Phone: ${phone}\n\n`;
-        
-        message += `*SHIPPING ADDRESS:*\n`;
-        message += `${houseNumber}, ${streetName}\n`;
-        if (landmark) message += `Landmark: ${landmark}\n`;
-        message += `PIN Code: ${pinCode}\n\n`;
-        
-        message += `*ITEMS:*\n`;
-        items.forEach((item, index) => {
-          message += `${index + 1}. ${item.name} (${item.size}/${item.color}) x${item.quantity} - ₹${(item.price * item.quantity).toLocaleString()}\n`;
-        });
-        
-        message += `\n*TOTAL: ₹${total.toLocaleString()}*\n\n`;
-        message += `_Please share payment details to confirm._`;
-
-        const encodedMessage = encodeURIComponent(message);
-        window.open(`https://wa.me/${adminPhone}?text=${encodedMessage}`, '_blank');
-
-        clearCart();
-        showToast('Order submitted via WhatsApp!', 'success');
-        router.push('/success');
       } else if (formData.paymentMethod === 'cod') {
+        if (!IS_COD_ENABLED) {
+          showToast('Cash on Delivery is currently disabled. Please select Online Payment (Razorpay).', 'error');
+          setLoading(false);
+          return;
+        }
+
         // Attempt background auto-sync to Shiprocket with COD payment method
         try {
           const appUrl = process.env.APP_URL || 'http://localhost:3000';
@@ -386,6 +365,9 @@ export default function CheckoutPage() {
       setLoading(false);
     }
   };
+
+  // Toggle for Cash on Delivery (set to false for upcoming/disabled state, true to activate anytime)
+  const IS_COD_ENABLED = false;
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-red-600/30 pt-20 lg:pt-24">
@@ -550,7 +532,7 @@ export default function CheckoutPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-black text-sm uppercase tracking-wider">Online Payment (Razorpay)</h3>
-                          <span className="bg-red-950/80 text-red-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border border-red-900/50">Fast & Secure</span>
+                          <span className="bg-red-950/80 text-red-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border border-red-900/50">Prepaid Only</span>
                         </div>
                         <p className="text-xs text-zinc-500 font-medium mt-1">UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, NetBanking, Wallets</p>
                       </div>
@@ -561,54 +543,43 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* WhatsApp Option */}
+                {/* Cash on Delivery (COD) Option (Upcoming / Disabled) */}
                 <div 
-                  onClick={() => setFormData({ ...formData, paymentMethod: 'whatsapp' })}
-                  className={`cursor-pointer p-6 rounded-3xl border transition-all duration-300 ${
-                    formData.paymentMethod === 'whatsapp' 
-                      ? 'bg-zinc-900/80 border-green-600 shadow-[0_0_30px_rgba(22,163,74,0.15)]' 
-                      : 'bg-zinc-950/40 border-zinc-900 hover:border-zinc-800'
+                  onClick={() => {
+                    if (IS_COD_ENABLED) {
+                      setFormData({ ...formData, paymentMethod: 'cod' });
+                    } else {
+                      showToast('Cash on Delivery (COD) is currently upcoming & disabled. Please select Online Payment.', 'info');
+                    }
+                  }}
+                  className={`p-6 rounded-3xl border transition-all duration-300 ${
+                    IS_COD_ENABLED
+                      ? formData.paymentMethod === 'cod'
+                        ? 'bg-zinc-900/80 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.15)] cursor-pointer' 
+                        : 'bg-zinc-950/40 border-zinc-900 hover:border-zinc-800 cursor-pointer'
+                      : 'bg-zinc-950/20 border-zinc-900/60 opacity-60 cursor-not-allowed'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-2xl ${formData.paymentMethod === 'whatsapp' ? 'bg-green-600 text-white' : 'bg-zinc-900 text-zinc-400'}`}>
-                        <MessageSquare size={22} />
-                      </div>
-                      <div>
-                        <h3 className="font-black text-sm uppercase tracking-wider">Checkout via WhatsApp</h3>
-                        <p className="text-xs text-zinc-500 font-medium mt-1">Place order directly with support & receive manual payment options</p>
-                      </div>
-                    </div>
-                    {formData.paymentMethod === 'whatsapp' && (
-                      <CheckCircle2 size={22} className="text-green-600 flex-shrink-0" />
-                    )}
-                  </div>
-                </div>
-
-                {/* Cash on Delivery (COD) Option */}
-                <div 
-                  onClick={() => setFormData({ ...formData, paymentMethod: 'cod' })}
-                  className={`cursor-pointer p-6 rounded-3xl border transition-all duration-300 ${
-                    formData.paymentMethod === 'cod' 
-                      ? 'bg-zinc-900/80 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.15)]' 
-                      : 'bg-zinc-950/40 border-zinc-900 hover:border-zinc-800'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-2xl ${formData.paymentMethod === 'cod' ? 'bg-amber-500 text-black' : 'bg-zinc-900 text-zinc-400'}`}>
+                      <div className={`p-3 rounded-2xl ${IS_COD_ENABLED && formData.paymentMethod === 'cod' ? 'bg-amber-500 text-black' : 'bg-zinc-900 text-zinc-500'}`}>
                         <Truck size={22} />
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-black text-sm uppercase tracking-wider">Cash on Delivery (COD)</h3>
-                          <span className="bg-amber-950/80 text-amber-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border border-amber-900/50">Pay at Doorstep</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-black text-sm uppercase tracking-wider text-zinc-400">Cash on Delivery (COD)</h3>
+                          <span className="bg-amber-950/80 text-amber-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border border-amber-900/50">
+                            {IS_COD_ENABLED ? 'Pay at Doorstep' : '⏳ UPCOMING - TEMPORARILY DISABLED'}
+                          </span>
                         </div>
-                        <p className="text-xs text-zinc-500 font-medium mt-1">Pay cash directly to courier partner upon doorstep package handover</p>
+                        <p className="text-xs text-zinc-500 font-medium mt-1">
+                          {IS_COD_ENABLED 
+                            ? 'Pay cash directly to courier partner upon doorstep package handover' 
+                            : 'COD will be activated soon. We are currently accepting Prepaid Razorpay orders only.'}
+                        </p>
                       </div>
                     </div>
-                    {formData.paymentMethod === 'cod' && (
+                    {IS_COD_ENABLED && formData.paymentMethod === 'cod' && (
                       <CheckCircle2 size={22} className="text-amber-500 flex-shrink-0" />
                     )}
                   </div>
@@ -625,8 +596,7 @@ export default function CheckoutPage() {
                 type="submit" 
                 className={`w-full ${
                   hasInvalidCartItems ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed shadow-none' :
-                  formData.paymentMethod === 'whatsapp' ? 'bg-green-600 shadow-[0_20px_50px_rgba(22,163,74,0.3)]' : 
-                  formData.paymentMethod === 'cod' ? 'bg-amber-500 text-black shadow-[0_20px_50px_rgba(245,158,11,0.3)]' :
+                  formData.paymentMethod === 'cod' && IS_COD_ENABLED ? 'bg-amber-500 text-black shadow-[0_20px_50px_rgba(245,158,11,0.3)]' :
                   'bg-red-600 text-white shadow-[0_20px_50px_rgba(220,38,38,0.3)]'
                 } disabled:bg-zinc-800 disabled:cursor-not-allowed py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all group`}
               >
@@ -637,9 +607,7 @@ export default function CheckoutPage() {
                   </span>
                 ) : (
                   <>
-                    {formData.paymentMethod === 'whatsapp' ? 'Checkout via WhatsApp' : 
-                     formData.paymentMethod === 'cod' ? 'Confirm COD Order' :
-                     `Pay ₹${total.toLocaleString()} with Razorpay`} 
+                    {formData.paymentMethod === 'cod' && IS_COD_ENABLED ? 'Confirm COD Order' : `Pay ₹${total.toLocaleString()} with Razorpay`} 
                     <ChevronRight size={20} className="group-hover:translate-x-2 transition-transform" />
                   </>
                 )}

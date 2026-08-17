@@ -105,6 +105,10 @@ export default function AdminDashboard() {
   const [actionLoading, setActionLoading] = useState<{ [key: string]: string | null }>({});
   const [trackingModalOrder, setTrackingModalOrder] = useState<any | null>(null);
 
+  // Category CMS States
+  const [isManageCategoriesModalOpen, setIsManageCategoriesModalOpen] = useState(false);
+  const [editingCategoryName, setEditingCategoryName] = useState<{ oldName: string; newName: string } | null>(null);
+
   const availableCategories = Array.from(
     new Set([
       'Oversized Collection',
@@ -257,6 +261,42 @@ export default function AdminDashboard() {
       console.error('Failed to fetch CMS products:', err);
     } finally {
       setProductsLoading(false);
+    }
+  };
+
+  // Category Management Handlers
+  const handleRenameCategory = async (oldCategory: string, newCategory: string) => {
+    if (!newCategory.trim() || oldCategory === newCategory.trim()) return;
+    try {
+      const res = await fetch('/api/categories/manage', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldCategory, newCategory: newCategory.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to rename category');
+      showToast(data.message || 'Category renamed successfully!', 'success');
+      setEditingCategoryName(null);
+      fetchCmsProducts();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to rename category', 'error');
+    }
+  };
+
+  const handleDeleteCategory = async (categoryName: string) => {
+    if (!window.confirm(`Are you sure you want to delete category "${categoryName}"? Any products under this category will be reassigned to "Oversized Collection".`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/categories/manage?category=${encodeURIComponent(categoryName)}&fallbackCategory=Oversized%20Collection`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete category');
+      showToast(data.message || 'Category deleted successfully!', 'success');
+      fetchCmsProducts();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete category', 'error');
     }
   };
 
@@ -1543,32 +1583,42 @@ export default function AdminDashboard() {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setIsCustomCategory(false);
-                    setEditingProduct(null);
-                    setProductForm({
-                      name: '',
-                      price: '',
-                      description: '',
-                      image: '',
-                      image_back: '',
-                      category: 'Oversized Collection',
-                      custom_category: '',
-                      badge: 'NEW',
-                      is_upcoming: false,
-                      launch_date: '',
-                      is_out_of_stock: false,
-                      stock_quantity: '50',
-                      display_order: cmsProducts.length + 1
-                    });
-                    setIsAddProductModalOpen(true);
-                  }}
-                  className="bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest px-5 py-3 rounded-2xl flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all active:scale-95"
-                >
-                  <Plus size={16} />
-                  + Add New Product / Drop
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={() => setIsManageCategoriesModalOpen(true)}
+                    className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-black uppercase tracking-widest px-5 py-3 rounded-2xl flex items-center gap-2 transition-all active:scale-95"
+                  >
+                    <Tag size={16} className="text-red-500" />
+                    Manage Categories ({availableCategories.length})
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsCustomCategory(false);
+                      setEditingProduct(null);
+                      setProductForm({
+                        name: '',
+                        price: '',
+                        description: '',
+                        image: '',
+                        image_back: '',
+                        category: 'Oversized Collection',
+                        custom_category: '',
+                        badge: 'NEW',
+                        is_upcoming: false,
+                        launch_date: '',
+                        is_out_of_stock: false,
+                        stock_quantity: '50',
+                        display_order: cmsProducts.length + 1
+                      });
+                      setIsAddProductModalOpen(true);
+                    }}
+                    className="bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest px-5 py-3 rounded-2xl flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all active:scale-95"
+                  >
+                    <Plus size={16} />
+                    + Add New Product / Drop
+                  </button>
+                </div>
               </div>
 
               {/* Products Table */}
@@ -2106,6 +2156,140 @@ export default function AdminDashboard() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MANAGE CATEGORIES MODAL */}
+      <AnimatePresence>
+        {isManageCategoriesModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#0f0f0f] border border-zinc-800 rounded-3xl p-6 sm:p-8 max-w-xl w-full text-white shadow-2xl relative max-h-[90vh] overflow-y-auto space-y-6"
+            >
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight text-white flex items-center gap-2">
+                    <Tag className="text-red-500" size={20} />
+                    Category Management HQ
+                  </h3>
+                  <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mt-0.5">
+                    Edit existing custom categories or delete unwanted categories
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsManageCategoriesModalOpen(false);
+                    setEditingCategoryName(null);
+                  }}
+                  className="w-8 h-8 rounded-full bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center font-black"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-zinc-800 overflow-hidden">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-zinc-800 text-[10px] font-black uppercase tracking-widest text-zinc-500 bg-zinc-950/50">
+                        <th className="py-3 px-4">Category Name</th>
+                        <th className="py-3 px-4">Products</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-900 font-bold">
+                      {availableCategories.map((cat) => {
+                        const productCount = cmsProducts.filter(p => p.category === cat).length;
+                        const isEditingThis = editingCategoryName?.oldName === cat;
+
+                        return (
+                          <tr key={cat} className="hover:bg-zinc-900/40 transition-colors">
+                            <td className="py-3.5 px-4">
+                              {isEditingThis ? (
+                                <input
+                                  type="text"
+                                  autoFocus
+                                  value={editingCategoryName.newName}
+                                  onChange={(e) => setEditingCategoryName({ ...editingCategoryName, newName: e.target.value })}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleRenameCategory(cat, editingCategoryName.newName);
+                                    if (e.key === 'Escape') setEditingCategoryName(null);
+                                  }}
+                                  className="w-full bg-zinc-950 border border-red-600 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none uppercase font-bold"
+                                />
+                              ) : (
+                                <span className="font-black uppercase tracking-wider text-white text-xs">
+                                  {cat}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-zinc-400 font-mono text-[11px]">
+                              {productCount} {productCount === 1 ? 'item' : 'items'}
+                            </td>
+                            <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                              {isEditingThis ? (
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    onClick={() => handleRenameCategory(cat, editingCategoryName.newName)}
+                                    className="bg-green-600 hover:bg-green-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-lg transition-all"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingCategoryName(null)}
+                                    className="bg-zinc-800 text-zinc-400 hover:text-white text-[10px] font-black uppercase px-3 py-1 rounded-lg transition-all"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    onClick={() => setEditingCategoryName({ oldName: cat, newName: cat })}
+                                    className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-[10px] font-black uppercase px-3 py-1 rounded-lg transition-all"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteCategory(cat)}
+                                    className="bg-zinc-900 hover:bg-red-950 text-red-400 hover:text-red-300 border border-zinc-800 text-[10px] font-black uppercase p-1.5 rounded-lg transition-all"
+                                    title="Delete Category"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={() => {
+                    setIsManageCategoriesModalOpen(false);
+                    setEditingCategoryName(null);
+                  }}
+                  className="bg-zinc-900 hover:bg-zinc-800 text-zinc-400 text-xs font-black uppercase px-5 py-2.5 rounded-xl transition-all"
+                >
+                  Close
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

@@ -21,27 +21,6 @@ export default function CartSidebar() {
   const taxes = 0;
   const total = subtotal + shipping;
 
-  const handleWhatsAppCheckout = () => {
-    const adminPhone = "918264966094"; 
-    let message = "NEW ORDER REQUEST\n\n";
-    items.forEach((item, index) => {
-      message += `${index + 1}. ${item.name}\n`;
-      message += `- Size: ${item.size}\n`;
-      message += `- Color: ${item.color}\n`;
-      message += `- Qty: ${item.quantity}\n`;
-      message += `- Price: INR ${item.price.toFixed(2)}\n\n`;
-    });
-    message += "ORDER SUMMARY\n";
-    message += `Subtotal: INR ${subtotal.toFixed(2)}\n`;
-    message += `Shipping: INR ${shipping.toFixed(2)}\n`;
-    message += `Total: INR ${total.toFixed(2)}\n\n`;
-    message += "Payment Request: Please share the payment details to confirm my order.";
-
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/${adminPhone}?text=${encodedMessage}`, '_blank');
-    closeSidebar();
-  };
-
   return (
     <AnimatePresence>
       {isSidebarOpen && (
