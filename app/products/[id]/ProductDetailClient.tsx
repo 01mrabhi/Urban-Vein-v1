@@ -27,8 +27,15 @@ export default function ProductDetailClient({ productId }: { productId: string }
 
   const liked = product ? isLiked(product.id) : false;
 
-  const isOutOfStock = Boolean(product?.is_out_of_stock) || product?.badge === 'OUT OF STOCK' || (typeof product?.stock_quantity === 'number' && product.stock_quantity <= 0);
-  const isUpcoming = Boolean(product?.is_upcoming) || product?.badge === 'UPCOMING DROP';
+  const availableSizes = product?.sizes && Array.isArray(product.sizes) && product.sizes.length > 0
+    ? product.sizes
+    : SIZES;
+
+  useEffect(() => {
+    if (availableSizes && !availableSizes.includes(selectedSize)) {
+      setSelectedSize(availableSizes[0] || 'L');
+    }
+  }, [product]);
 
   const [selectedSize, setSelectedSize] = useState('L');
   const [quantity, setQuantity] = useState(1);
@@ -274,19 +281,28 @@ export default function ProductDetailClient({ productId }: { productId: string }
                   </button>
                 </div>
                 <div className="grid grid-cols-5 gap-2 sm:gap-3">
-                  {SIZES.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`py-4 rounded-2xl font-black text-sm uppercase tracking-wider transition-all border ${
-                        selectedSize === size
-                          ? 'bg-red-600 text-white border-red-600 shadow-[0_0_20px_rgba(220,38,38,0.4)]'
-                          : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+                  {SIZES.map((size) => {
+                    const isAvailable = availableSizes.includes(size);
+                    const isSelected = selectedSize === size;
+
+                    return (
+                      <button
+                        key={size}
+                        disabled={!isAvailable}
+                        onClick={() => isAvailable && setSelectedSize(size)}
+                        title={isAvailable ? `Select Size ${size}` : `Size ${size} not available for this item`}
+                        className={`py-4 rounded-2xl font-black text-sm uppercase tracking-wider transition-all border ${
+                          !isAvailable
+                            ? 'bg-zinc-950/40 border-zinc-900/40 text-zinc-700 opacity-40 line-through cursor-not-allowed'
+                            : isSelected
+                            ? 'bg-red-600 text-white border-red-600 shadow-[0_0_20px_rgba(220,38,38,0.4)] cursor-pointer'
+                            : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white cursor-pointer'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

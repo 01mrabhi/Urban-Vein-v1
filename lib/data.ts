@@ -1,9 +1,8 @@
 export const CATEGORIES = [
-  'Oversized Collection',
-  'Graphic Series',
-  'Essential Solids',
-  'Limited Drops'
+  'Oversized Collection'
 ];
+
+export const ALL_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 
 export type Product = {
   id: string;
@@ -21,6 +20,7 @@ export type Product = {
   is_out_of_stock?: boolean;
   stock_quantity?: number;
   display_order?: number;
+  sizes?: string[];
 };
 
 export const PRODUCTS: Product[] = [

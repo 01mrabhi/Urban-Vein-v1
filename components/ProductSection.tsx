@@ -37,7 +37,7 @@ export default function ProductSection() {
 
   const dynamicCategories = Array.from(
     new Set([
-      ...CATEGORIES,
+      'Oversized Collection',
       ...products.map(p => p.category).filter(Boolean)
     ])
   );

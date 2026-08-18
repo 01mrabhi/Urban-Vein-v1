@@ -57,7 +57,15 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
   const { addToCart } = useCart();
   const { isLiked, toggleLike } = useWishlist();
 
-  const [showSizeChart, setShowSizeChart] = useState(false);
+  const availableSizes = (product as any)?.sizes && Array.isArray((product as any).sizes) && (product as any).sizes.length > 0
+    ? (product as any).sizes
+    : SIZES;
+
+  React.useEffect(() => {
+    if (availableSizes && !availableSizes.includes(selectedSize)) {
+      setSelectedSize(availableSizes[0] || 'L');
+    }
+  }, [product]);
   const liked = product ? isLiked(product.id) : false;
 
   const isOutOfStock = Boolean(product?.is_out_of_stock) || product?.badge === 'OUT OF STOCK' || (typeof product?.stock_quantity === 'number' && product.stock_quantity <= 0);
@@ -217,19 +225,28 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                     </button>
                   </div>
                   <div className="grid grid-cols-5 gap-3">
-                    {SIZES.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={`h-12 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-                          selectedSize === size 
-                          ? 'bg-red-600/10 border-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.1)]' 
-                          : 'bg-zinc-950 border-zinc-900 text-zinc-600 hover:border-zinc-700 hover:text-white'
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {SIZES.map((size) => {
+                      const isAvailable = availableSizes.includes(size);
+                      const isSelected = selectedSize === size;
+
+                      return (
+                        <button
+                          key={size}
+                          disabled={!isAvailable}
+                          onClick={() => isAvailable && setSelectedSize(size)}
+                          title={isAvailable ? `Select Size ${size}` : `Size ${size} not available for this item`}
+                          className={`h-12 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                            !isAvailable
+                              ? 'bg-zinc-950/40 border-zinc-900/40 text-zinc-700 opacity-40 line-through cursor-not-allowed'
+                              : isSelected 
+                              ? 'bg-red-600/10 border-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.1)] cursor-pointer' 
+                              : 'bg-zinc-950 border-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-white cursor-pointer'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
                   </div>
                 </section>
 

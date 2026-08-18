@@ -40,11 +40,16 @@ export async function GET(request: Request) {
       }
 
       if (dbProduct) {
+        const mappedSizes = Array.isArray(dbProduct.sizes)
+          ? dbProduct.sizes
+          : (typeof dbProduct.sizes === 'string' ? JSON.parse(dbProduct.sizes) : ['S', 'M', 'L', 'XL', 'XXL']);
+
         return NextResponse.json({
           product: {
             ...dbProduct,
             id: dbProduct.id || dbProduct.original_id,
             actionType: dbProduct.action_type || 'quick-add',
+            sizes: mappedSizes,
           },
           source: 'database',
         });
@@ -107,6 +112,9 @@ export async function GET(request: Request) {
         id: p.id || p.original_id,
         actionType: p.action_type || 'quick-add',
         display_order: p.display_order !== undefined && p.display_order !== null ? p.display_order : index,
+        sizes: Array.isArray(p.sizes)
+          ? p.sizes
+          : (typeof p.sizes === 'string' ? JSON.parse(p.sizes) : ['S', 'M', 'L', 'XL', 'XXL']),
       }));
       return NextResponse.json({ products: mappedProducts, source: 'database' });
     }
@@ -171,6 +179,7 @@ export async function POST(request: Request) {
       is_out_of_stock: Boolean(is_out_of_stock),
       stock_quantity: parseInt(stock_quantity || '50', 10),
       display_order: cleanDisplayOrder,
+      sizes: Array.isArray(body.sizes) && body.sizes.length > 0 ? body.sizes : ['S', 'M', 'L', 'XL', 'XXL'],
     };
 
     let { data, error } = await supabaseAdmin

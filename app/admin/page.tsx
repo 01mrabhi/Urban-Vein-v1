@@ -41,6 +41,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
+import { ALL_SIZES } from '../../lib/data';
 
 const ADMIN_EMAILS = [
   'urbanvein10@gmail.com',
@@ -81,7 +82,8 @@ export default function AdminDashboard() {
     launch_date: '',
     is_out_of_stock: false,
     stock_quantity: '50',
-    display_order: 0
+    display_order: 0,
+    sizes: ALL_SIZES,
   });
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [uploadingFront, setUploadingFront] = useState(false);
@@ -112,9 +114,6 @@ export default function AdminDashboard() {
   const availableCategories = Array.from(
     new Set([
       'Oversized Collection',
-      'Graphic Series',
-      'Essential Solids',
-      'Limited Drops',
       ...cmsProducts.map((p) => p.category).filter(Boolean),
     ])
   );
@@ -284,6 +283,10 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteCategory = async (categoryName: string) => {
+    if (categoryName === 'Oversized Collection') {
+      showToast('Cannot delete default system fallback category "Oversized Collection"', 'error');
+      return;
+    }
     if (!window.confirm(`Are you sure you want to delete category "${categoryName}"? Any products under this category will be reassigned to "Oversized Collection".`)) {
       return;
     }
@@ -1609,7 +1612,8 @@ export default function AdminDashboard() {
                         launch_date: '',
                         is_out_of_stock: false,
                         stock_quantity: '50',
-                        display_order: cmsProducts.length + 1
+                        display_order: cmsProducts.length + 1,
+                        sizes: ALL_SIZES,
                       });
                       setIsAddProductModalOpen(true);
                     }}
@@ -1741,7 +1745,8 @@ export default function AdminDashboard() {
                                       launch_date: p.launch_date || '',
                                       is_out_of_stock: Boolean(p.is_out_of_stock),
                                       stock_quantity: (p.stock_quantity || 50).toString(),
-                                      display_order: p.display_order || 0
+                                      display_order: p.display_order || 0,
+                                      sizes: Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : ALL_SIZES,
                                     });
                                     setIsAddProductModalOpen(true);
                                   }}
@@ -2140,6 +2145,42 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {/* Size Availability Controls */}
+                <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-white block">Available Product Sizes</span>
+                      <span className="text-[9px] text-zinc-500 block">Uncheck sizes that are out of stock / not available for this product</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {ALL_SIZES.map((size) => {
+                      const currentSizes = productForm.sizes || ALL_SIZES;
+                      const isSelected = currentSizes.includes(size);
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => {
+                            const updated = isSelected
+                              ? currentSizes.filter(s => s !== size)
+                              : [...currentSizes, size];
+                            setProductForm({ ...productForm, sizes: updated.length > 0 ? updated : [size] });
+                          }}
+                          className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider border transition-all cursor-pointer flex items-center gap-1.5 ${
+                            isSelected
+                              ? 'bg-red-600/20 text-red-400 border-red-900/50 shadow-[0_0_15px_rgba(220,38,38,0.2)]'
+                              : 'bg-zinc-900/60 text-zinc-600 border-zinc-800/80 hover:text-zinc-400'
+                          }`}
+                        >
+                          <span>{isSelected ? '✓' : '✕'}</span>
+                          <span>{size}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="pt-4 flex items-center justify-end gap-3 border-t border-zinc-800">
                   <button
                     type="button"
@@ -2261,13 +2302,15 @@ export default function AdminDashboard() {
                                   >
                                     Edit
                                   </button>
-                                  <button
-                                    onClick={() => handleDeleteCategory(cat)}
-                                    className="bg-zinc-900 hover:bg-red-950 text-red-400 hover:text-red-300 border border-zinc-800 text-[10px] font-black uppercase p-1.5 rounded-lg transition-all"
-                                    title="Delete Category"
-                                  >
-                                    <Trash2 size={13} />
-                                  </button>
+                                  {cat !== 'Oversized Collection' && (
+                                    <button
+                                      onClick={() => handleDeleteCategory(cat)}
+                                      className="bg-zinc-900 hover:bg-red-950 text-red-400 hover:text-red-300 border border-zinc-800 text-[10px] font-black uppercase p-1.5 rounded-lg transition-all"
+                                      title="Delete Category"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  )}
                                 </div>
                               )}
                             </td>

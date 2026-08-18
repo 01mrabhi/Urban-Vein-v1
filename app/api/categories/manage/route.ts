@@ -27,12 +27,12 @@ export async function GET() {
     }
 
     const allCategories = Array.from(
-      new Set([...CATEGORIES, ...dbCategories])
+      new Set(['Oversized Collection', ...dbCategories])
     );
 
     return NextResponse.json({ categories: allCategories });
   } catch (err: any) {
-    return NextResponse.json({ categories: CATEGORIES, error: err.message });
+    return NextResponse.json({ categories: ['Oversized Collection'], error: err.message });
   }
 }
 
