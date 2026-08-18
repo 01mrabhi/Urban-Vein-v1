@@ -157,6 +157,8 @@ export default function AdminDashboard() {
     if (savedKey === MASTER_PASSCODE || savedKey === MASTER_SECURITY_KEY) {
       setIsAuthorized(true);
       fetchOrders();
+      fetchCmsProducts();
+      fetchCoupons();
     } else {
       setIsAuthorized(false);
     }
@@ -184,6 +186,8 @@ export default function AdminDashboard() {
       localStorage.setItem('uv_admin_session_key', MASTER_SECURITY_KEY);
       setIsAuthorized(true);
       fetchOrders();
+      fetchCmsProducts();
+      fetchCoupons();
       showToast('2FA Authentication Successful! Welcome HQ CEO.', 'success');
     } else {
       showToast('Invalid 2FA Verification Code', 'error');
@@ -308,6 +312,8 @@ export default function AdminDashboard() {
       fetchCmsProducts();
     } else if (activeTab === 'coupons') {
       fetchCoupons();
+    } else if (activeTab === 'orders') {
+      fetchOrders();
     }
   }, [activeTab]);
 
@@ -943,7 +949,11 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-4">
             {/* Sync Button */}
             <button
-              onClick={() => fetchOrders(true)}
+              onClick={() => {
+                fetchOrders(true);
+                fetchCmsProducts();
+                fetchCoupons();
+              }}
               disabled={refreshing}
               className={`p-2.5 rounded-xl border transition-all ${
                 isDark 
@@ -1040,7 +1050,8 @@ export default function AdminDashboard() {
             </button>
           </div>
           
-          {activeTab === 'orders' ? (
+          {/* TAB 1: ORDERS STREAM */}
+          {activeTab === 'orders' && (
             <>
               {/* ANALYTICS STAT CARDS */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1471,108 +1482,10 @@ export default function AdminDashboard() {
             )}
           </div>
           </>
-          ) : (
-            /* PROMO CODES & COUPONS ENGINE HUB */
-            <div className="space-y-6">
-              {/* Header Action Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-6">
-                <div>
-                  <h3 className="text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-                    <Tag className="text-red-500" size={22} />
-                    Promo Codes & Coupons HQ
-                  </h3>
-                  <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mt-1">
-                    Manage live discounts, minimum cart spend limits, percentage caps, and usage quotas.
-                  </p>
-                </div>
+          )}
 
-                <button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest px-5 py-3 rounded-2xl flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all active:scale-95"
-                >
-                  <Plus size={16} />
-                  Create Promo Code
-                </button>
-              </div>
-
-              {/* Coupons List Table */}
-              <div className={`rounded-3xl border overflow-hidden ${
-                isDark ? 'bg-[#0f0f0f] border-zinc-900' : 'bg-white border-zinc-200 shadow-sm'
-              }`}>
-                {couponsLoading ? (
-                  <div className="py-20 text-center text-xs font-black uppercase tracking-widest text-zinc-500 animate-pulse">
-                    Loading Promo Codes...
-                  </div>
-                ) : coupons.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className={`border-b text-[10px] font-black uppercase tracking-widest ${
-                          isDark ? 'border-zinc-900 text-zinc-500 bg-zinc-950/50' : 'border-zinc-200 text-zinc-400 bg-zinc-50'
-                        }`}>
-                          <th className="py-4 px-6">Promo Code</th>
-                          <th className="py-4 px-6">Discount Type</th>
-                          <th className="py-4 px-6">Min Order Spend</th>
-                          <th className="py-4 px-6">Redemptions</th>
-                          <th className="py-4 px-6">Expires At</th>
-                          <th className="py-4 px-6">Status</th>
-                          <th className="py-4 px-6 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-900 text-xs font-bold">
-                        {coupons.map((c) => (
-                          <tr key={c.id} className="hover:bg-zinc-900/30 transition-colors">
-                            <td className="py-4 px-6">
-                              <span className="font-mono font-black text-sm text-red-500 bg-red-950/40 border border-red-900/40 px-3 py-1.5 rounded-xl inline-block">
-                                {c.code}
-                              </span>
-                            </td>
-                            <td className="py-4 px-6">
-                              <span className="text-white font-black">
-                                {c.discount_type === 'percentage' ? `${c.discount_value}% OFF` : `₹${c.discount_value} FLAT OFF`}
-                              </span>
-                              {c.max_discount_amount && (
-                                <span className="text-[9px] text-zinc-500 block">Max Cap: ₹{c.max_discount_amount}</span>
-                              )}
-                            </td>
-                            <td className="py-4 px-6 text-zinc-300">
-                              {c.min_order_amount ? `Min ₹${c.min_order_amount.toLocaleString()}` : 'No Minimum'}
-                            </td>
-                            <td className="py-4 px-6 text-zinc-400">
-                              {c.times_used} {c.usage_limit ? `/ ${c.usage_limit}` : 'used (Unlimited)'}
-                            </td>
-                            <td className="py-4 px-6 text-zinc-500">
-                              {c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-IN') : 'No Expiry'}
-                            </td>
-                            <td className="py-4 px-6">
-                              <button
-                                onClick={() => handleToggleCouponStatus(c.id, c.is_active)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
-                                  c.is_active
-                                    ? 'bg-green-500/10 text-green-400 border-green-900/40 hover:bg-green-500/20'
-                                    : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:text-white'
-                                }`}
-                              >
-                                {c.is_active ? <ToggleRight size={14} className="text-green-400" /> : <ToggleLeft size={14} />}
-                                {c.is_active ? 'LIVE ACTIVE' : 'INACTIVE'}
-                              </button>
-                            </td>
-                            <td className="py-4 px-6 text-right">
-                              <button
-                                onClick={() => handleDeleteCoupon(c.id)}
-                                className="p-2 rounded-xl bg-zinc-900 hover:bg-red-950 text-zinc-400 hover:text-red-400 border border-zinc-800 transition-colors"
-                                title="Delete Coupon"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : activeTab === 'products' ? (
-            /* PRODUCTS & DROPS CMS HQ */
+          {/* TAB 2: PRODUCTS & DROPS CMS HQ */}
+          {activeTab === 'products' && (
             <div className="space-y-6">
               {/* Header Action Bar */}
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-6">
@@ -1783,7 +1696,109 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
-          ) : (
+          )}
+
+          {/* TAB 3: PROMO CODES & COUPONS ENGINE HUB */}
+          {activeTab === 'coupons' && (
+            <div className="space-y-6">
+              {/* Header Action Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-6">
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+                    <Tag className="text-red-500" size={22} />
+                    Promo Codes & Coupons HQ
+                  </h3>
+                  <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mt-1">
+                    Manage live discounts, minimum cart spend limits, percentage caps, and usage quotas.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest px-5 py-3 rounded-2xl flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all active:scale-95"
+                >
+                  <Plus size={16} />
+                  Create Promo Code
+                </button>
+              </div>
+
+              {/* Coupons List Table */}
+              <div className={`rounded-3xl border overflow-hidden ${
+                isDark ? 'bg-[#0f0f0f] border-zinc-900' : 'bg-white border-zinc-200 shadow-sm'
+              }`}>
+                {couponsLoading ? (
+                  <div className="py-20 text-center text-xs font-black uppercase tracking-widest text-zinc-500 animate-pulse">
+                    Loading Promo Codes...
+                  </div>
+                ) : coupons.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className={`border-b text-[10px] font-black uppercase tracking-widest ${
+                          isDark ? 'border-zinc-900 text-zinc-500 bg-zinc-950/50' : 'border-zinc-200 text-zinc-400 bg-zinc-50'
+                        }`}>
+                          <th className="py-4 px-6">Promo Code</th>
+                          <th className="py-4 px-6">Discount Type</th>
+                          <th className="py-4 px-6">Min Order Spend</th>
+                          <th className="py-4 px-6">Redemptions</th>
+                          <th className="py-4 px-6">Expires At</th>
+                          <th className="py-4 px-6">Status</th>
+                          <th className="py-4 px-6 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-900 text-xs font-bold">
+                        {coupons.map((c) => (
+                          <tr key={c.id} className="hover:bg-zinc-900/30 transition-colors">
+                            <td className="py-4 px-6">
+                              <span className="font-mono font-black text-sm text-red-500 bg-red-950/40 border border-red-900/40 px-3 py-1.5 rounded-xl inline-block">
+                                {c.code}
+                              </span>
+                            </td>
+                            <td className="py-4 px-6">
+                              <span className="text-white font-black">
+                                {c.discount_type === 'percentage' ? `${c.discount_value}% OFF` : `₹${c.discount_value} FLAT OFF`}
+                              </span>
+                              {c.max_discount_amount && (
+                                <span className="text-[9px] text-zinc-500 block">Max Cap: ₹{c.max_discount_amount}</span>
+                              )}
+                            </td>
+                            <td className="py-4 px-6 text-zinc-300">
+                              {c.min_order_amount ? `Min ₹${c.min_order_amount.toLocaleString()}` : 'No Minimum'}
+                            </td>
+                            <td className="py-4 px-6 text-zinc-400">
+                              {c.times_used} {c.usage_limit ? `/ ${c.usage_limit}` : 'used (Unlimited)'}
+                            </td>
+                            <td className="py-4 px-6 text-zinc-500">
+                              {c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-IN') : 'No Expiry'}
+                            </td>
+                            <td className="py-4 px-6">
+                              <button
+                                onClick={() => handleToggleCouponStatus(c.id, c.is_active)}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
+                                  c.is_active
+                                    ? 'bg-green-500/10 text-green-400 border-green-900/40 hover:bg-green-500/20'
+                                    : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:text-white'
+                                }`}
+                              >
+                                {c.is_active ? <ToggleRight size={14} className="text-green-400" /> : <ToggleLeft size={14} />}
+                                {c.is_active ? 'LIVE ACTIVE' : 'INACTIVE'}
+                              </button>
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                              <button
+                                onClick={() => handleDeleteCoupon(c.id)}
+                                className="p-2 rounded-xl bg-zinc-900 hover:bg-red-950 text-zinc-400 hover:text-red-400 border border-zinc-800 transition-colors"
+                                title="Delete Coupon"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
                   <div className="py-20 text-center space-y-3">
                     <Tag size={48} className="mx-auto text-zinc-700" />
                     <p className="font-bold text-sm text-zinc-500">No promo codes created yet.</p>
