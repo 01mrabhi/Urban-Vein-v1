@@ -36,13 +36,10 @@ export default function ProductSection() {
     : products.filter(p => p.category === activeCategory);
 
   const dynamicCategories = Array.from(
-    new Set([
-      'Oversized Collection',
-      ...products.map(p => p.category).filter(Boolean)
-    ])
+    new Set(products.map(p => p.category).filter(Boolean))
   );
 
-  const categoriesWithAll = ['All', ...dynamicCategories];
+  const categoriesWithAll = ['All', ...(dynamicCategories.length > 0 ? dynamicCategories : ['Oversized Collection'])];
 
   return (
     <section id="shop" className="py-24 px-8 bg-zinc-950">

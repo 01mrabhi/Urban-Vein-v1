@@ -111,12 +111,10 @@ export default function AdminDashboard() {
   const [isManageCategoriesModalOpen, setIsManageCategoriesModalOpen] = useState(false);
   const [editingCategoryName, setEditingCategoryName] = useState<{ oldName: string; newName: string } | null>(null);
 
-  const availableCategories = Array.from(
-    new Set([
-      'Oversized Collection',
-      ...cmsProducts.map((p) => p.category).filter(Boolean),
-    ])
+  const rawCategories = Array.from(
+    new Set(cmsProducts.map((p) => p.category).filter(Boolean))
   );
+  const availableCategories = rawCategories.length > 0 ? rawCategories : ['Oversized Collection'];
   const [trackingDetails, setTrackingDetails] = useState<any | null>(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
@@ -287,15 +285,19 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteCategory = async (categoryName: string) => {
-    if (categoryName === 'Oversized Collection') {
-      showToast('Cannot delete default system fallback category "Oversized Collection"', 'error');
-      return;
-    }
-    if (!window.confirm(`Are you sure you want to delete category "${categoryName}"? Any products under this category will be reassigned to "Oversized Collection".`)) {
+    const remainingCategories = availableCategories.filter((c) => c !== categoryName);
+    const fallbackCategory = remainingCategories.length > 0 ? remainingCategories[0] : 'General';
+    const affectedCount = cmsProducts.filter((p) => p.category === categoryName).length;
+
+    const confirmMsg = affectedCount > 0
+      ? `Are you sure you want to delete category "${categoryName}"? ${affectedCount} product(s) in this category will be reassigned to "${fallbackCategory}".`
+      : `Are you sure you want to delete category "${categoryName}"?`;
+
+    if (!window.confirm(confirmMsg)) {
       return;
     }
     try {
-      const res = await fetch(`/api/categories/manage?category=${encodeURIComponent(categoryName)}&fallbackCategory=Oversized%20Collection`, {
+      const res = await fetch(`/api/categories/manage?category=${encodeURIComponent(categoryName)}&fallbackCategory=${encodeURIComponent(fallbackCategory)}`, {
         method: 'DELETE',
       });
       const data = await res.json();
@@ -355,9 +357,10 @@ export default function AdminDashboard() {
       return;
     }
 
+    const defaultCat = availableCategories[0] || 'General';
     const finalCategory = (productForm.category === 'CUSTOM' || isCustomCategory)
-      ? (productForm.custom_category.trim() || 'Oversized Collection')
-      : productForm.category;
+      ? (productForm.custom_category.trim() || defaultCat)
+      : (productForm.category || defaultCat);
 
     const payload = {
       ...productForm,
@@ -1518,7 +1521,7 @@ export default function AdminDashboard() {
                         description: '',
                         image: '',
                         image_back: '',
-                        category: 'Oversized Collection',
+                        category: availableCategories[0] || 'General',
                         custom_category: '',
                         badge: 'NEW',
                         is_upcoming: false,
@@ -1651,7 +1654,7 @@ export default function AdminDashboard() {
                                       description: p.description || '',
                                       image: p.image,
                                       image_back: p.image_back || '',
-                                      category: p.category || 'Oversized Collection',
+                                      category: p.category || (availableCategories[0] || 'General'),
                                       custom_category: '',
                                       badge: p.badge || 'NEW',
                                       is_upcoming: Boolean(p.is_upcoming),
@@ -2317,15 +2320,13 @@ export default function AdminDashboard() {
                                   >
                                     Edit
                                   </button>
-                                  {cat !== 'Oversized Collection' && (
-                                    <button
-                                      onClick={() => handleDeleteCategory(cat)}
-                                      className="bg-zinc-900 hover:bg-red-950 text-red-400 hover:text-red-300 border border-zinc-800 text-[10px] font-black uppercase p-1.5 rounded-lg transition-all"
-                                      title="Delete Category"
-                                    >
-                                      <Trash2 size={13} />
-                                    </button>
-                                  )}
+                                  <button
+                                    onClick={() => handleDeleteCategory(cat)}
+                                    className="bg-zinc-900 hover:bg-red-950 text-red-400 hover:text-red-300 border border-zinc-800 text-[10px] font-black uppercase p-1.5 rounded-lg transition-all"
+                                    title={`Delete Category "${cat}"`}
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
                                 </div>
                               )}
                             </td>

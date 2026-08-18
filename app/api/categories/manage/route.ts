@@ -26,9 +26,8 @@ export async function GET() {
       } catch (_) {}
     }
 
-    const allCategories = Array.from(
-      new Set(['Oversized Collection', ...dbCategories])
-    );
+    const uniqueCategories = Array.from(new Set(dbCategories));
+    const allCategories = uniqueCategories.length > 0 ? uniqueCategories : ['Oversized Collection'];
 
     return NextResponse.json({ categories: allCategories });
   } catch (err: any) {
@@ -80,7 +79,7 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
-    const fallbackCategory = searchParams.get('fallbackCategory') || 'Oversized Collection';
+    const fallbackCategory = searchParams.get('fallbackCategory') || 'General';
 
     if (!category) {
       return NextResponse.json({ error: 'Category name parameter is required' }, { status: 400 });
