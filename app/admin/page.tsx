@@ -2252,17 +2252,17 @@ export default function AdminDashboard() {
                     <tbody className="divide-y divide-zinc-900 font-bold">
                       {availableCategories.map((cat) => {
                         const productCount = cmsProducts.filter(p => p.category === cat).length;
-                        const isEditingThis = editingCategoryName?.oldName === cat;
+                        const isEditingThis = editingCategoryName !== null && editingCategoryName.oldName === cat;
 
                         return (
                           <tr key={cat} className="hover:bg-zinc-900/40 transition-colors">
                             <td className="py-3.5 px-4">
-                              {isEditingThis ? (
+                              {isEditingThis && editingCategoryName ? (
                                 <input
                                   type="text"
                                   autoFocus
                                   value={editingCategoryName.newName}
-                                  onChange={(e) => setEditingCategoryName({ ...editingCategoryName, newName: e.target.value })}
+                                  onChange={(e) => setEditingCategoryName({ oldName: editingCategoryName.oldName, newName: e.target.value })}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleRenameCategory(cat, editingCategoryName.newName);
                                     if (e.key === 'Escape') setEditingCategoryName(null);
@@ -2279,7 +2279,7 @@ export default function AdminDashboard() {
                               {productCount} {productCount === 1 ? 'item' : 'items'}
                             </td>
                             <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                              {isEditingThis ? (
+                              {isEditingThis && editingCategoryName ? (
                                 <div className="flex items-center justify-end gap-2">
                                   <button
                                     onClick={() => handleRenameCategory(cat, editingCategoryName.newName)}

@@ -34,10 +34,10 @@ export const metadata: Metadata = {
     siteName: 'Urban Vein',
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1200&auto=format&fit=crop',
+        url: '/products/vk_forever_front.jpg',
         width: 1200,
-        height: 630,
-        alt: 'Urban Vein Streetwear Collection',
+        height: 1200,
+        alt: 'Urban Vein - GOAT Virat Kohli Streetwear',
       },
     ],
     locale: 'en_IN',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Urban Vein | High-Grade Streetwear',
     description: 'Architecting the future of street aesthetics. Express PAN-India shipping.',
-    images: ['https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1200&auto=format&fit=crop'],
+    images: ['/products/vk_forever_front.jpg'],
   },
 };
 
