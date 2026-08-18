@@ -4,6 +4,33 @@ export const CATEGORIES = [
 
 export const ALL_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 
+export function parseProductSizes(p: any): string[] {
+  if (!p) return ALL_SIZES;
+
+  if (p.sizes) {
+    if (Array.isArray(p.sizes) && p.sizes.length > 0) return p.sizes;
+    if (typeof p.sizes === 'string') {
+      try {
+        const parsed = JSON.parse(p.sizes);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (_) {}
+    }
+  }
+
+  if (p.action_type && typeof p.action_type === 'string') {
+    if (p.action_type.startsWith('sizes:')) {
+      const parts = p.action_type.replace('sizes:', '').split(',').map((s: string) => s.trim()).filter(Boolean);
+      if (parts.length > 0) return parts;
+    }
+    try {
+      const parsed = JSON.parse(p.action_type);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (_) {}
+  }
+
+  return ALL_SIZES;
+}
+
 export type Product = {
   id: string;
   original_id?: string;

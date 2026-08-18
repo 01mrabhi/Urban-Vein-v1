@@ -15,8 +15,12 @@ CREATE TABLE IF NOT EXISTS products (
   is_out_of_stock BOOLEAN DEFAULT FALSE,
   stock_quantity INTEGER DEFAULT 50,
   display_order INTEGER DEFAULT 0,
+  sizes JSONB DEFAULT '["S","M","L","XL","XXL"]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration statement if products table already exists:
+ALTER TABLE products ADD COLUMN IF NOT EXISTS sizes JSONB DEFAULT '["S","M","L","XL","XXL"]'::jsonb;
 
 -- Enable RLS
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;

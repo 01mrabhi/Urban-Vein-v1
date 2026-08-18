@@ -11,7 +11,7 @@ import { useWishlist } from '../../../context/WishlistContext';
 import { useToast } from '../../../context/ToastContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
-import { PRODUCTS } from '../../../lib/data';
+import { PRODUCTS, parseProductSizes } from '../../../lib/data';
 
 const SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 
@@ -36,9 +36,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [showSizeChart, setShowSizeChart] = useState(false);
 
-  const availableSizes = product?.sizes && Array.isArray(product.sizes) && product.sizes.length > 0
-    ? product.sizes
-    : SIZES;
+  const availableSizes = parseProductSizes(product);
 
   useEffect(() => {
     if (availableSizes && !availableSizes.includes(selectedSize)) {

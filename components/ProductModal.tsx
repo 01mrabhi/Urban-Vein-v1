@@ -48,6 +48,7 @@ const RECOMMENDED = [
 import { useToast } from '../context/ToastContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { parseProductSizes } from '../lib/data';
 
 export default function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
   const [selectedSize, setSelectedSize] = useState('L');
@@ -58,9 +59,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
   const { addToCart } = useCart();
   const { isLiked, toggleLike } = useWishlist();
 
-  const availableSizes = (product as any)?.sizes && Array.isArray((product as any).sizes) && (product as any).sizes.length > 0
-    ? (product as any).sizes
-    : SIZES;
+  const availableSizes = parseProductSizes(product);
 
   React.useEffect(() => {
     if (availableSizes && !availableSizes.includes(selectedSize)) {

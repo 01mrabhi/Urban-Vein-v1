@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { supabase } from '../../../../lib/supabase';
-import { PRODUCTS } from '../../../../lib/data';
+import { PRODUCTS, parseProductSizes } from '../../../../lib/data';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -40,16 +40,12 @@ export async function GET(request: Request) {
       }
 
       if (dbProduct) {
-        const mappedSizes = Array.isArray(dbProduct.sizes)
-          ? dbProduct.sizes
-          : (typeof dbProduct.sizes === 'string' ? JSON.parse(dbProduct.sizes) : ['S', 'M', 'L', 'XL', 'XXL']);
-
         return NextResponse.json({
           product: {
             ...dbProduct,
             id: dbProduct.id || dbProduct.original_id,
             actionType: dbProduct.action_type || 'quick-add',
-            sizes: mappedSizes,
+            sizes: parseProductSizes(dbProduct),
           },
           source: 'database',
         });
@@ -112,9 +108,7 @@ export async function GET(request: Request) {
         id: p.id || p.original_id,
         actionType: p.action_type || 'quick-add',
         display_order: p.display_order !== undefined && p.display_order !== null ? p.display_order : index,
-        sizes: Array.isArray(p.sizes)
-          ? p.sizes
-          : (typeof p.sizes === 'string' ? JSON.parse(p.sizes) : ['S', 'M', 'L', 'XL', 'XXL']),
+        sizes: parseProductSizes(p),
       }));
       return NextResponse.json({ products: mappedProducts, source: 'database' });
     }
@@ -165,6 +159,8 @@ export async function POST(request: Request) {
     const cleanOriginalId = original_id ? String(original_id) : Date.now().toString();
     const cleanDisplayOrder = typeof body.display_order === 'number' ? body.display_order : parseInt(body.display_order || '0', 10);
 
+    const rawSizes = Array.isArray(body.sizes) && body.sizes.length > 0 ? body.sizes : ['S', 'M', 'L', 'XL', 'XXL'];
+
     let newProduct: any = {
       original_id: cleanOriginalId,
       name,
@@ -179,7 +175,8 @@ export async function POST(request: Request) {
       is_out_of_stock: Boolean(is_out_of_stock),
       stock_quantity: parseInt(stock_quantity || '50', 10),
       display_order: cleanDisplayOrder,
-      sizes: Array.isArray(body.sizes) && body.sizes.length > 0 ? body.sizes : ['S', 'M', 'L', 'XL', 'XXL'],
+      sizes: rawSizes,
+      action_type: `sizes:${rawSizes.join(',')}`,
     };
 
     let { data, error } = await supabaseAdmin
@@ -271,6 +268,11 @@ export async function PUT(request: Request) {
       updates.price = formattedPrice;
     }
 
+    if (body.sizes && Array.isArray(body.sizes)) {
+      updates.sizes = body.sizes;
+      updates.action_type = `sizes:${body.sizes.join(',')}`;
+    }
+
     // Sanitize empty string launch_date to null to avoid TIMESTAMPTZ syntax errors
     if ('launch_date' in updates) {
       if (!updates.launch_date || typeof updates.launch_date !== 'string' || updates.launch_date.trim() === '') {
@@ -333,6 +335,8 @@ export async function PUT(request: Request) {
         badge: updates.badge || 'NEW',
         is_upcoming: Boolean(updates.is_upcoming),
         is_out_of_stock: Boolean(updates.is_out_of_stock),
+        sizes: updates.sizes || ['S', 'M', 'L', 'XL', 'XXL'],
+        action_type: updates.action_type || `sizes:${(updates.sizes || ['S', 'M', 'L', 'XL', 'XXL']).join(',')}`,
       };
 
       let insertRes = await supabaseAdmin

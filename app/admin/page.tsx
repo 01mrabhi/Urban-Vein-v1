@@ -41,7 +41,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
-import { ALL_SIZES } from '../../lib/data';
+import { ALL_SIZES, parseProductSizes } from '../../lib/data';
 
 const ADMIN_EMAILS = [
   'urbanvein10@gmail.com',
@@ -1746,7 +1746,7 @@ export default function AdminDashboard() {
                                       is_out_of_stock: Boolean(p.is_out_of_stock),
                                       stock_quantity: (p.stock_quantity || 50).toString(),
                                       display_order: p.display_order || 0,
-                                      sizes: Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : ALL_SIZES,
+                                      sizes: parseProductSizes(p),
                                     });
                                     setIsAddProductModalOpen(true);
                                   }}
