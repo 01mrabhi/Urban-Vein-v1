@@ -53,6 +53,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
   const [selectedSize, setSelectedSize] = useState('L');
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [isAdding, setIsAdding] = useState(false);
+  const [showSizeChart, setShowSizeChart] = useState(false);
   const { showToast } = useToast();
   const { addToCart } = useCart();
   const { isLiked, toggleLike } = useWishlist();
@@ -65,7 +66,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
     if (availableSizes && !availableSizes.includes(selectedSize)) {
       setSelectedSize(availableSizes[0] || 'L');
     }
-  }, [product]);
+  }, [product, availableSizes]);
   const liked = product ? isLiked(product.id) : false;
 
   const isOutOfStock = Boolean(product?.is_out_of_stock) || product?.badge === 'OUT OF STOCK' || (typeof product?.stock_quantity === 'number' && product.stock_quantity <= 0);

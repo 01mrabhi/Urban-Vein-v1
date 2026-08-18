@@ -27,6 +27,15 @@ export default function ProductDetailClient({ productId }: { productId: string }
 
   const liked = product ? isLiked(product.id) : false;
 
+  const isOutOfStock = Boolean(product?.is_out_of_stock) || product?.badge === 'OUT OF STOCK' || (typeof product?.stock_quantity === 'number' && product.stock_quantity <= 0);
+  const isUpcoming = Boolean(product?.is_upcoming) || product?.badge === 'UPCOMING DROP';
+
+  const [selectedSize, setSelectedSize] = useState('L');
+  const [quantity, setQuantity] = useState(1);
+  const [activeAccordion, setActiveAccordion] = useState<string | null>('details');
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [showSizeChart, setShowSizeChart] = useState(false);
+
   const availableSizes = product?.sizes && Array.isArray(product.sizes) && product.sizes.length > 0
     ? product.sizes
     : SIZES;
@@ -35,13 +44,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
     if (availableSizes && !availableSizes.includes(selectedSize)) {
       setSelectedSize(availableSizes[0] || 'L');
     }
-  }, [product]);
-
-  const [selectedSize, setSelectedSize] = useState('L');
-  const [quantity, setQuantity] = useState(1);
-  const [activeAccordion, setActiveAccordion] = useState<string | null>('details');
-  const [currentImage, setCurrentImage] = useState<string | null>(product ? (product.image_back || product.image) : null);
-  const [showSizeChart, setShowSizeChart] = useState(false);
+  }, [product, availableSizes]);
 
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
