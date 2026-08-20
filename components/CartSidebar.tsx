@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { useCart } from '../context/CartContext';
-import { X, ShoppingCart, Minus, Plus, Trash2, ArrowRight } from 'lucide-react';
+import { X, ShoppingCart, Minus, Plus, Trash2, ArrowRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -140,6 +140,18 @@ export default function CartSidebar() {
             {/* Footer Summary */}
             {items.length > 0 && (
               <div className="p-6 border-t border-zinc-800 bg-[#121417]">
+                {/* Available Offer Banner */}
+                <div className="bg-gradient-to-r from-red-950/50 via-zinc-900/80 to-red-950/50 border border-red-500/30 rounded-xl p-3 mb-4 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={13} className="text-red-400 animate-pulse flex-shrink-0" />
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-300">
+                      Use code <span className="font-mono font-black text-white">WELCOME100</span> for ₹100 OFF
+                    </p>
+                  </div>
+                  <span className="text-[8px] font-black uppercase tracking-widest text-red-400 bg-red-950/80 px-2 py-0.5 rounded border border-red-800/40 flex-shrink-0">
+                    Live
+                  </span>
+                </div>
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-xs font-black uppercase tracking-widest text-zinc-400">
                     <span>Subtotal</span>

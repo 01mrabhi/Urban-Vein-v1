@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { useCart } from '../context/CartContext';
 import { supabase } from '../lib/supabase';
+import AnnouncementBar from './AnnouncementBar';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -55,7 +56,9 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 w-full flex items-center px-6 lg:px-8 py-4 lg:py-6 bg-zinc-950 border-b border-zinc-900 z-[100] backdrop-blur-md bg-zinc-950/80">
+      <header className="fixed top-0 left-0 w-full z-[100]">
+        {!isCheckout && <AnnouncementBar />}
+        <nav className="w-full flex items-center px-6 lg:px-8 py-4 lg:py-6 bg-zinc-950/80 border-b border-zinc-900 backdrop-blur-md">
         {/* Left Section: Logo */}
         <div className="flex-1 flex items-center">
           <Link href="/" className="flex items-center">
@@ -169,6 +172,7 @@ export default function Navbar() {
           <div className="flex-1" />
         )}
       </nav>
+    </header>
 
       {/* Mobile Menu Modal */}
       <AnimatePresence>

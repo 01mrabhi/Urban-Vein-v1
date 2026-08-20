@@ -700,28 +700,74 @@ export default function CheckoutPage() {
                   </button>
                 </div>
               ) : (
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    placeholder="ENTER PROMO CODE (e.g. URBAN20)"
-                    value={promoCodeInput}
-                    onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleApplyPromoCode();
-                      }
-                    }}
-                    className="w-full bg-zinc-950/50 border border-zinc-900 rounded-2xl px-6 py-5 text-[10px] font-black uppercase tracking-[0.3em] focus:outline-none focus:border-red-600 transition-colors pr-24 placeholder:text-zinc-700"
-                  />
-                  <button 
-                    type="button"
-                    onClick={handleApplyPromoCode}
-                    disabled={promoLoading}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-zinc-900 hover:bg-red-600 disabled:bg-zinc-800 text-white px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-colors"
-                  >
-                    {promoLoading ? 'Validating...' : 'Apply'}
-                  </button>
+                <div className="space-y-3">
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      placeholder="ENTER PROMO CODE (e.g. WELCOME100)"
+                      value={promoCodeInput}
+                      onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleApplyPromoCode();
+                        }
+                      }}
+                      className="w-full bg-zinc-950/50 border border-zinc-900 rounded-2xl px-6 py-5 text-[10px] font-black uppercase tracking-[0.3em] focus:outline-none focus:border-red-600 transition-colors pr-24 placeholder:text-zinc-700"
+                    />
+                    <button 
+                      type="button"
+                      onClick={handleApplyPromoCode}
+                      disabled={promoLoading}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-zinc-900 hover:bg-red-600 disabled:bg-zinc-800 text-white px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-colors"
+                    >
+                      {promoLoading ? 'Validating...' : 'Apply'}
+                    </button>
+                  </div>
+
+                  {/* Quick Apply WELCOME100 Offer */}
+                  <div className="bg-red-950/20 border border-red-500/30 rounded-2xl p-3 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <Sparkles size={14} className="text-red-400 animate-pulse flex-shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+                          <span className="font-mono text-red-400 font-black">WELCOME100</span>
+                          <span className="text-[8px] text-zinc-400 font-bold uppercase tracking-wider">&#47;&#47; Save Flat ₹100</span>
+                        </p>
+                        <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Active Welcome Offer (Min. order ₹499)</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPromoCodeInput('WELCOME100');
+                        fetch('/api/coupons/validate', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ code: 'WELCOME100', subtotal }),
+                        })
+                          .then((r) => r.json())
+                          .then((data) => {
+                            if (data.valid) {
+                              setAppliedCoupon({
+                                code: data.code,
+                                discountAmount: data.discountAmount,
+                              });
+                              showToast(`Promo code ${data.code} applied! Saved ₹${data.discountAmount}`, 'success');
+                            } else {
+                              setPromoCodeInput('WELCOME100');
+                              showToast(data.error || 'Click Apply to validate', 'info');
+                            }
+                          })
+                          .catch(() => {
+                            setPromoCodeInput('WELCOME100');
+                          });
+                      }}
+                      className="bg-red-600 hover:bg-red-500 text-white px-3.5 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all active:scale-95 cursor-pointer shadow-sm flex-shrink-0"
+                    >
+                      Apply Code
+                    </button>
+                  </div>
                 </div>
               )}
             </motion.section>

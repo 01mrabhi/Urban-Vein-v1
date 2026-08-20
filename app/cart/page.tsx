@@ -13,7 +13,8 @@ import {
   RotateCcw,
   ChevronRight,
   X,
-  MapPin
+  MapPin,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
@@ -222,6 +223,23 @@ export default function CartPage() {
                           <Plus size={18} />
                         </button>
                       </div>
+
+                      {/* Available Offer Quick Apply */}
+                      <button
+                        type="button"
+                        onClick={() => setCoupon('WELCOME100')}
+                        className="w-full bg-red-950/30 hover:bg-red-950/50 border border-red-500/30 rounded-xl p-2.5 flex items-center justify-between text-left transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Sparkles size={12} className="text-red-400 animate-pulse" />
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-300">
+                            Available: <span className="font-mono font-black text-white">WELCOME100</span> (₹100 OFF)
+                          </span>
+                        </div>
+                        <span className="text-[8px] font-black uppercase tracking-wider text-red-400 group-hover:underline">
+                          Apply
+                        </span>
+                      </button>
 
                       <Link
                         href="/checkout"
