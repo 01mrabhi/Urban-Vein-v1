@@ -5,6 +5,7 @@ import { X, ShoppingCart, Minus, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Link from 'next/link';
 import Image from 'next/image';
+import LoginModal from './LoginModal';
 
 export default function CartSidebar() {
   const { 
@@ -14,7 +15,9 @@ export default function CartSidebar() {
     updateQuantity, 
     removeFromCart, 
     subtotal,
-    cartCount 
+    cartCount,
+    isLoginModalOpen,
+    closeLoginModal
   } = useCart();
 
   const shipping = subtotal === 0 ? 0 : 89.00;
@@ -172,6 +175,10 @@ export default function CartSidebar() {
           </motion.div>
         </>
       )}
+      <LoginModal 
+        isOpen={isLoginModalOpen} 
+        onClose={closeLoginModal} 
+      />
     </AnimatePresence>
   );
 }

@@ -1,6 +1,8 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+import { supabase } from '../lib/supabase';
+
 export interface CartItem {
   cartItemId: string; // unique ID for the cart (productId + size + color)
   id: string; // product ID
@@ -18,12 +20,15 @@ export interface CartItem {
 interface CartContextType {
   items: CartItem[];
   isSidebarOpen: boolean;
+  isLoginModalOpen: boolean;
   addToCart: (item: Omit<CartItem, 'cartItemId'>) => void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, delta: number) => void;
   clearCart: () => void;
   openSidebar: () => void;
   closeSidebar: () => void;
+  openLoginModal: () => void;
+  closeLoginModal: () => void;
   cartCount: number;
   subtotal: number;
 }
@@ -33,6 +38,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -53,6 +59,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, isMounted]);
 
+  const openLoginModal = () => setIsLoginModalOpen(true);
+  const closeLoginModal = () => setIsLoginModalOpen(false);
+
   const addToCart = (item: Omit<CartItem, 'cartItemId'>) => {
     if (item.is_out_of_stock || item.is_upcoming) {
       return;
@@ -72,6 +81,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
     // Open sidebar when adding to cart
     setIsSidebarOpen(true);
+
+    // Prompt login modal with a smooth delay when an unauthenticated user adds a product
+    if (typeof window !== 'undefined') {
+      const hasSeen = sessionStorage.getItem('hasSeenLoginPopup');
+      if (!hasSeen) {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+          if (!user) {
+            // Delay 600ms so the user sees the item added to cart first without disruption
+            setTimeout(() => {
+              setIsLoginModalOpen(true);
+            }, 600);
+          }
+        }).catch(() => {});
+      }
+    }
   };
 
   const removeFromCart = (cartItemId: string) => {
@@ -97,12 +121,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     <CartContext.Provider value={{
       items,
       isSidebarOpen,
+      isLoginModalOpen,
       addToCart,
       removeFromCart,
       updateQuantity,
       clearCart,
       openSidebar,
       closeSidebar,
+      openLoginModal,
+      closeLoginModal,
       cartCount,
       subtotal
     }}>
