@@ -220,7 +220,27 @@ export async function assignShiprocketAWB(shipmentId: string, courierId?: number
   const data = await res.json();
 
   if (!res.ok || !data.awb_assign_status) {
-    throw new Error(data.message || data.response?.data?.awb_assign_error || 'Failed to assign AWB via Shiprocket');
+    const errorMsg = data.message || data.response?.data?.awb_assign_error || '';
+    
+    // Check if Shiprocket reports that AWB is already assigned
+    // e.g. "AWB is already assigned with awb - 371892747336 and status - PICKUP GENERATED"
+    const awbMatch = errorMsg.match(/awb\s*[-:]?\s*([0-9a-zA-Z]+)/i) || 
+                     errorMsg.match(/(\d{8,20})/);
+    const awbCodeFromMsg = awbMatch ? awbMatch[1] : null;
+    const awbCode = data.response?.data?.awb_code || data.awb_code || awbCodeFromMsg;
+    const courierName = data.response?.data?.courier_name || data.courier_name;
+
+    if (awbCode) {
+      return {
+        awbCode: String(awbCode),
+        courierName: courierName || 'Shiprocket Courier',
+        courierCompanyId: data.response?.data?.courier_company_id || null,
+        appliedWeight: data.response?.data?.applied_weight || null,
+        alreadyAssigned: true,
+      };
+    }
+
+    throw new Error(errorMsg || 'Failed to assign AWB via Shiprocket');
   }
 
   return {
@@ -228,6 +248,7 @@ export async function assignShiprocketAWB(shipmentId: string, courierId?: number
     courierName: data.response?.data?.courier_name,
     courierCompanyId: data.response?.data?.courier_company_id,
     appliedWeight: data.response?.data?.applied_weight,
+    alreadyAssigned: false,
   };
 }
 
@@ -399,22 +420,42 @@ export async function getShiprocketOrderDetails(shiprocketOrderId: string) {
   }
 
   const orderData = data.data;
-  const firstShipment = Array.isArray(orderData.shipments) && orderData.shipments.length > 0
-    ? orderData.shipments[0]
-    : null;
+  let firstShipment: any = null;
+  if (Array.isArray(orderData.shipments) && orderData.shipments.length > 0) {
+    firstShipment = orderData.shipments[0];
+  } else if (orderData.shipments && typeof orderData.shipments === 'object') {
+    const values = Object.values(orderData.shipments);
+    firstShipment = values.length > 0 && typeof values[0] === 'object' ? values[0] : orderData.shipments;
+  }
 
-  const awbCode = orderData.awb_code || firstShipment?.awb || firstShipment?.awb_code || null;
-  const courierName = orderData.courier_name || firstShipment?.courier_name || firstShipment?.courier || null;
-  const shipmentId = orderData.shipment_id || firstShipment?.id?.toString() || null;
-  const status = orderData.status || firstShipment?.current_status || 'created';
+  const awbCode = orderData.awb_code || 
+                  firstShipment?.awb || 
+                  firstShipment?.awb_code || 
+                  orderData.awb || 
+                  null;
+
+  const courierName = orderData.courier_name || 
+                      firstShipment?.courier_name || 
+                      firstShipment?.courier || 
+                      null;
+
+  const shipmentId = orderData.shipment_id || 
+                     firstShipment?.id?.toString() || 
+                     firstShipment?.shipment_id?.toString() || 
+                     null;
+
+  const status = orderData.status || 
+                 firstShipment?.current_status || 
+                 firstShipment?.status || 
+                 'created';
 
   return {
     orderId: orderData.id?.toString(),
     shipmentId: shipmentId?.toString(),
     status,
     statusCode: orderData.status_code,
-    awbCode,
-    courierName,
+    awbCode: awbCode ? String(awbCode) : null,
+    courierName: courierName ? String(courierName) : null,
     etd: firstShipment?.etd || orderData.etd || null,
   };
 }

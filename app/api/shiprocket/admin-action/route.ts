@@ -39,23 +39,66 @@ export async function POST(request: Request) {
     // 2. Perform requested Admin Action
     switch (action) {
       case 'assign_awb': {
-        if (!currentShipmentId) {
+        if (!currentShipmentId && !currentSrOrderId) {
           return NextResponse.json(
-            { error: 'Shipment ID not found. Push order to Shiprocket first.' },
+            { error: 'Shipment ID or Shiprocket Order ID not found. Push order to Shiprocket first.' },
             { status: 400 }
           );
         }
 
-        const awbResult = await assignShiprocketAWB(currentShipmentId, courierId);
+        let awbCode: string | null = null;
+        let courierName: string = 'Shiprocket Courier';
+        let shipmentStatus: string = 'awb_assigned';
+
+        try {
+          if (currentShipmentId) {
+            const awbResult = await assignShiprocketAWB(currentShipmentId, courierId);
+            awbCode = awbResult.awbCode || null;
+            courierName = awbResult.courierName || courierName;
+          }
+        } catch (assignErr: any) {
+          const msg = assignErr.message || '';
+          // Extract AWB from message if present: e.g. "AWB is already assigned with awb - 371892747336 and status - PICKUP GENERATED"
+          const match = msg.match(/awb\s*[-:]?\s*([0-9a-zA-Z]+)/i) || msg.match(/(\d{8,20})/);
+          if (match) {
+            awbCode = match[1];
+          }
+          const statusMatch = msg.match(/status\s*[-:]?\s*([A-Za-z_ ]+)/i);
+          if (statusMatch) {
+            shipmentStatus = statusMatch[1].trim().toLowerCase().replace(/\s+/g, '_');
+          }
+        }
+
+        // Fallback: If still not resolved, query live order details from Shiprocket
+        if (!awbCode && currentSrOrderId) {
+          try {
+            const details = await getShiprocketOrderDetails(currentSrOrderId);
+            if (details.awbCode) {
+              awbCode = details.awbCode;
+              if (details.courierName) courierName = details.courierName;
+              if (details.status) shipmentStatus = details.status;
+            }
+          } catch (err) {
+            console.warn('Fallback getShiprocketOrderDetails failed:', err);
+          }
+        }
+
+        if (!awbCode) {
+          return NextResponse.json(
+            { error: 'Failed to assign or retrieve AWB from Shiprocket. Please try again.' },
+            { status: 400 }
+          );
+        }
 
         // Update DB with AWB info
         await supabaseAdmin
           .from('orders')
           .update({
-            shiprocket_awb_code: awbResult.awbCode,
-            courier_name: awbResult.courierName,
+            shiprocket_awb_code: awbCode,
+            courier_name: courierName,
             status: 'shipped',
-            shipment_status: 'awb_assigned',
+            shipment_status: shipmentStatus,
+            tracking_url: `https://shiprocket.co/tracking/${awbCode}`,
           })
           .eq('id', orderId);
 
@@ -73,9 +116,10 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
           success: true,
-          message: `AWB ${awbResult.awbCode} assigned via ${awbResult.courierName}`,
-          awbCode: awbResult.awbCode,
-          courierName: awbResult.courierName,
+          message: `AWB ${awbCode} assigned via ${courierName}`,
+          awbCode,
+          courierName,
+          shipmentStatus,
         });
       }
 
