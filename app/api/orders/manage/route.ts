@@ -1,15 +1,80 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { supabase } from '../../../../lib/supabase';
+import { PRODUCTS } from '../../../../lib/data';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// GET: Fetch all orders or a single order by ID using secure admin service role
+// Helper to fetch all catalog products and build lookup dictionaries
+async function getProductCatalog() {
+  const catalogMap = new Map<string, { name: string; image: string; category: string }>();
+
+  // 1. Load static fallback products
+  PRODUCTS.forEach((p) => {
+    const info = { name: p.name, image: p.image, category: p.category || 'Oversized Collection' };
+    if (p.id) catalogMap.set(p.id.toLowerCase(), info);
+    if (p.original_id) catalogMap.set(p.original_id.toLowerCase(), info);
+    if (p.name) {
+      catalogMap.set(p.name.toLowerCase(), info);
+      catalogMap.set(p.name.toLowerCase().replace(/\s+/g, '-'), info);
+    }
+  });
+
+  // 2. Load live DB products from Supabase
+  try {
+    const { data: dbProducts } = await supabaseAdmin.from('products').select('*');
+    (dbProducts || []).forEach((p: any) => {
+      const info = {
+        name: p.name,
+        image: p.image,
+        category: p.category || 'Oversized Collection',
+      };
+      if (p.id) catalogMap.set(p.id.toLowerCase(), info);
+      if (p.original_id) catalogMap.set(p.original_id.toLowerCase(), info);
+      if (p.name) {
+        catalogMap.set(p.name.toLowerCase(), info);
+        catalogMap.set(p.name.toLowerCase().replace(/\s+/g, '-'), info);
+      }
+    });
+  } catch (err) {
+    console.warn('Failed to load DB products for enrichment:', err);
+  }
+
+  return catalogMap;
+}
+
+function resolveProductInfo(productId: string | undefined, catalogMap: Map<string, any>) {
+  if (!productId) return null;
+  const raw = productId.trim().toLowerCase();
+
+  // 1. Direct exact match
+  if (catalogMap.has(raw)) return catalogMap.get(raw);
+
+  // 2. Strip size suffix (e.g., -m, -l, -xl, -xxl, -s, -xs)
+  const stripped = raw.replace(/-(s|m|l|xl|xxl|xs|2xl|3xl)$/i, '');
+  if (catalogMap.has(stripped)) return catalogMap.get(stripped);
+
+  // 3. Partial / slug search
+  const cleanAlphaNum = raw.replace(/[^a-z0-9]/g, '');
+  for (const [key, val] of catalogMap.entries()) {
+    const keyAlphaNum = key.replace(/[^a-z0-9]/g, '');
+    if (keyAlphaNum === cleanAlphaNum || (keyAlphaNum.length > 5 && cleanAlphaNum.includes(keyAlphaNum))) {
+      return val;
+    }
+  }
+
+  return null;
+}
+
+// GET: Fetch all orders or a single order by ID with enriched product details
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get('id');
+
+    // Build catalog map for enrichment
+    const catalogMap = await getProductCatalog();
 
     // 1. Fetch single order by ID if specified
     if (orderId) {
@@ -19,7 +84,9 @@ export async function GET(request: Request) {
         .eq('id', orderId)
         .maybeSingle();
 
-      if (orderRes.error || !orderRes.data) {
+      let orderData = orderRes.data;
+
+      if (orderRes.error || !orderData) {
         const singleOrder = await supabaseAdmin
           .from('orders')
           .select('*')
@@ -32,17 +99,29 @@ export async function GET(request: Request) {
             .select('*')
             .eq('order_id', orderId);
 
-          return NextResponse.json({
-            order: {
-              ...singleOrder.data,
-              order_items: itemsRes.data || [],
-            },
-          });
+          orderData = {
+            ...singleOrder.data,
+            order_items: itemsRes.data || [],
+          };
+        } else {
+          return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
-        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
       }
 
-      return NextResponse.json({ order: orderRes.data });
+      // Enrich single order items
+      if (orderData && orderData.order_items) {
+        orderData.order_items = orderData.order_items.map((item: any) => {
+          const info = resolveProductInfo(item.product_id, catalogMap);
+          return {
+            ...item,
+            product_name: item.product_name || info?.name || `Product #${item.product_id}`,
+            product_image: item.product_image || info?.image || '/icon.png',
+            product_category: item.product_category || info?.category || 'Urban Vein Apparel',
+          };
+        });
+      }
+
+      return NextResponse.json({ order: orderData });
     }
 
     // 2. Fetch all orders (Admin CRM stream)
@@ -103,9 +182,23 @@ export async function GET(request: Request) {
       }
     }
 
+    // Enrich all order items with product titles, images, and categories
+    const enrichedOrders = ordersData.map((order) => ({
+      ...order,
+      order_items: (order.order_items || []).map((item: any) => {
+        const info = resolveProductInfo(item.product_id, catalogMap);
+        return {
+          ...item,
+          product_name: item.product_name || info?.name || `Product #${item.product_id}`,
+          product_image: item.product_image || info?.image || '/icon.png',
+          product_category: item.product_category || info?.category || 'Urban Vein Apparel',
+        };
+      }),
+    }));
+
     return NextResponse.json({
       success: true,
-      orders: ordersData || [],
+      orders: enrichedOrders || [],
     });
   } catch (err: any) {
     console.error('Error fetching orders in /api/orders/manage:', err);

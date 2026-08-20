@@ -41,7 +41,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
-import { ALL_SIZES, parseProductSizes } from '../../lib/data';
+import { ALL_SIZES, parseProductSizes, PRODUCTS } from '../../lib/data';
 
 const ADMIN_EMAILS = [
   'urbanvein10@gmail.com',
@@ -780,6 +780,57 @@ export default function AdminDashboard() {
 
   const isDark = theme === 'dark';
 
+  // Helper to resolve product image, title, and metadata for manifest items
+  const getOrderItemDetails = (item: any) => {
+    const rawId = (item.product_id || '').trim();
+    const cleanId = rawId.replace(/-(S|M|L|XL|XXL|XS|2XL|3XL)$/i, '');
+
+    // 1. If already enriched by API with custom name
+    if (item.product_name && !item.product_name.startsWith('Product #')) {
+      return {
+        name: item.product_name,
+        image: item.product_image || '/icon.png',
+        category: item.product_category || 'Oversized Collection',
+      };
+    }
+
+    // 2. Search in cmsProducts state
+    const foundCms = cmsProducts.find(
+      (p) =>
+        (p.id && (p.id === rawId || p.id === cleanId)) ||
+        (p.original_id && (p.original_id === rawId || p.original_id === cleanId)) ||
+        (p.name && (p.name.toLowerCase().replace(/\s+/g, '-') === rawId.toLowerCase() || p.name.toLowerCase() === rawId.toLowerCase()))
+    );
+    if (foundCms) {
+      return {
+        name: foundCms.name,
+        image: foundCms.image || '/icon.png',
+        category: foundCms.category || 'Oversized Collection',
+      };
+    }
+
+    // 3. Search in static PRODUCTS catalog
+    const foundStatic = PRODUCTS.find(
+      (p) =>
+        (p.id && (p.id === rawId || p.id === cleanId)) ||
+        (p.original_id && (p.original_id === rawId || p.original_id === cleanId)) ||
+        (p.name && (p.name.toLowerCase().replace(/\s+/g, '-') === rawId.toLowerCase() || p.name.toLowerCase() === rawId.toLowerCase()))
+    );
+    if (foundStatic) {
+      return {
+        name: foundStatic.name,
+        image: foundStatic.image || '/icon.png',
+        category: foundStatic.category || 'Oversized Collection',
+      };
+    }
+
+    return {
+      name: item.product_name || item.name || `Product #${rawId}`,
+      image: item.product_image || '/icon.png',
+      category: item.product_category || 'Urban Vein Apparel',
+    };
+  };
+
   if (authChecking) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center text-white selection:bg-red-600/30">
@@ -1313,15 +1364,60 @@ export default function AdminDashboard() {
                                   <h4 className="text-xs font-black uppercase tracking-widest text-red-500">Order Items Manifest</h4>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                     {order.order_items && order.order_items.length > 0 ? (
-                                      order.order_items.map((item: any, idx: number) => (
-                                        <div key={idx} className={`p-4 rounded-2xl border text-xs ${
-                                          isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
-                                        }`}>
-                                          <p className="font-bold text-sm mb-1">Product #{item.product_id}</p>
-                                          <p className="text-[10px] text-zinc-500 font-bold uppercase">Size: {item.size} • Qty: {item.quantity}</p>
-                                          <p className="font-black text-red-500 mt-2">₹{(item.price * item.quantity).toLocaleString()}</p>
-                                        </div>
-                                      ))
+                                      order.order_items.map((item: any, idx: number) => {
+                                        const details = getOrderItemDetails(item);
+                                        return (
+                                          <div
+                                            key={idx}
+                                            className={`p-4 rounded-2xl border flex items-center gap-4 transition-all hover:border-zinc-700 ${
+                                              isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
+                                            }`}
+                                          >
+                                            {/* Product Thumbnail */}
+                                            <div className="relative w-16 h-20 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 flex-shrink-0 shadow-sm">
+                                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                                              <img
+                                                src={details.image || '/icon.png'}
+                                                alt={details.name}
+                                                onError={(e: any) => {
+                                                  e.target.src = '/icon.png';
+                                                }}
+                                                className="w-full h-full object-cover"
+                                              />
+                                            </div>
+
+                                            {/* Product Info */}
+                                            <div className="flex-1 min-w-0 space-y-1">
+                                              <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500 block truncate">
+                                                {details.category}
+                                              </span>
+                                              <h5 className="font-bold text-xs sm:text-sm text-white truncate" title={details.name}>
+                                                {details.name}
+                                              </h5>
+
+                                              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300">
+                                                  Size: <strong className="text-white">{item.size || 'STD'}</strong>
+                                                </span>
+                                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300">
+                                                  Qty: <strong className="text-white">{item.quantity || 1}</strong>
+                                                </span>
+                                              </div>
+
+                                              <div className="flex items-center justify-between pt-1">
+                                                <p className="font-black text-red-500 text-xs sm:text-sm">
+                                                  ₹{(item.price * (item.quantity || 1)).toLocaleString()}
+                                                </p>
+                                                {item.quantity > 1 && (
+                                                  <span className="text-[9px] text-zinc-500 font-medium">
+                                                    (₹{item.price.toLocaleString()} each)
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })
                                     ) : (
                                       <p className="text-xs text-zinc-500 italic">No individual item details recorded.</p>
                                     )}
