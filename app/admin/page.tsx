@@ -192,17 +192,14 @@ export default function AdminDashboard() {
     }
   };
 
-  // Fetch real-time orders from Supabase
+  // Fetch real-time orders securely from Supabase Admin API
   const fetchOrders = async (showRefreshToast = false) => {
     if (showRefreshToast) setRefreshing(true);
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*, order_items(*)')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setOrders(data || []);
+      const res = await fetch('/api/orders/manage', { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch orders');
+      setOrders(data.orders || []);
       if (showRefreshToast) showToast('Dashboard synced with live database', 'success');
     } catch (err: any) {
       showToast(err.message || 'Failed to fetch orders', 'error');
