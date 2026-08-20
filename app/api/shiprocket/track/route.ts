@@ -12,6 +12,8 @@ export async function GET(request: Request) {
     let targetShipmentId = shipmentId;
     let targetAwbCode = awbCode;
 
+    let fetchedOrder: any = null;
+
     // If order_id is provided, fetch shipment details from database
     if (orderId && !targetShipmentId && !targetAwbCode) {
       const { data: order, error } = await supabaseAdmin
@@ -24,6 +26,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Order not found' }, { status: 404 });
       }
 
+      fetchedOrder = order;
       targetShipmentId = order.shiprocket_shipment_id;
       targetAwbCode = order.shiprocket_awb_code;
 
@@ -32,7 +35,7 @@ export async function GET(request: Request) {
           status: order.status || 'processing',
           currentStatus: 'Order Placed & Preparing for Dispatch',
           awbCode: null,
-          courierName: 'Delhivery / BlueDart Express',
+          courierName: order.courier_name || 'Assigned Courier Partner',
           activities: [
             {
               date: new Date().toISOString(),
@@ -58,17 +61,24 @@ export async function GET(request: Request) {
       awbCode: targetAwbCode || undefined,
     });
 
+    // If tracking API didn't return a courier name, fallback to database courier_name
+    if (!trackingData.courierName && fetchedOrder?.courier_name) {
+      trackingData.courierName = fetchedOrder.courier_name;
+    }
+
     // Auto-update database record if AWB or courier is resolved
-    if (orderId && trackingData.awbCode) {
+    if (orderId && (trackingData.awbCode || trackingData.courierName)) {
       try {
+        const updatePayload: any = {
+          status: 'shipped',
+          shipment_status: trackingData.currentStatus || 'in_transit',
+        };
+        if (trackingData.awbCode) updatePayload.shiprocket_awb_code = trackingData.awbCode;
+        if (trackingData.courierName) updatePayload.courier_name = trackingData.courierName;
+
         await supabaseAdmin
           .from('orders')
-          .update({
-            shiprocket_awb_code: trackingData.awbCode,
-            courier_name: trackingData.courierName || undefined,
-            status: 'shipped',
-            shipment_status: trackingData.currentStatus || 'in_transit',
-          })
+          .update(updatePayload)
           .eq('id', orderId);
       } catch (dbErr) {
         console.warn('Auto-save tracking info to DB failed:', dbErr);

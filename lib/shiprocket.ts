@@ -382,15 +382,40 @@ export async function trackShiprocketShipment(identifier: { shipmentId?: string;
 
   const trackingData = data.tracking_data || {};
   const tracks = trackingData.shipment_track_activities || [];
+  const shipmentTrack = Array.isArray(trackingData.shipment_track) && trackingData.shipment_track.length > 0
+    ? trackingData.shipment_track[0]
+    : (trackingData.shipment_track && typeof trackingData.shipment_track === 'object' ? trackingData.shipment_track : {});
+
+  const courierName = trackingData.courier_name || 
+                      shipmentTrack.courier_name || 
+                      shipmentTrack.courier_partner || 
+                      shipmentTrack.courier || 
+                      data.courier_name || 
+                      '';
+
+  const awbCode = trackingData.awb_code || 
+                  shipmentTrack.awb_code || 
+                  shipmentTrack.awb || 
+                  identifier.awbCode || 
+                  '';
+
+  const currentStatus = trackingData.current_status || 
+                        shipmentTrack.current_status || 
+                        shipmentTrack.status || 
+                        'In Transit';
+
+  const edd = trackingData.edd || shipmentTrack.edd || '';
+  const origin = trackingData.origin || shipmentTrack.origin || '';
+  const destination = trackingData.destination || shipmentTrack.destination || '';
 
   return {
     trackStatus: trackingData.track_status || 0,
-    currentStatus: trackingData.current_status || 'In Transit',
-    awbCode: trackingData.awb_code || identifier.awbCode || '',
-    courierName: trackingData.courier_name || '',
-    origin: trackingData.origin || '',
-    destination: trackingData.destination || '',
-    edd: trackingData.edd || '',
+    currentStatus,
+    awbCode,
+    courierName,
+    origin,
+    destination,
+    edd,
     activities: tracks.map((act: any) => ({
       date: act.date,
       status: act.activity,

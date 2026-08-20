@@ -2563,7 +2563,7 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div className="bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
                       <span className="text-zinc-500 text-[9px] font-black uppercase block mb-1">Courier Partner</span>
-                      <p className="font-bold text-white">{trackingDetails.courierName || 'Delhivery / BlueDart'}</p>
+                      <p className="font-bold text-white">{trackingDetails.courierName || trackingModalOrder?.courier_name || 'Amazon Shipping / Assigned Courier'}</p>
                     </div>
                     <div className="bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
                       <span className="text-zinc-500 text-[9px] font-black uppercase block mb-1">Estimated Delivery</span>
