@@ -5,7 +5,9 @@ import {
   generateShiprocketLabel, 
   generateShiprocketInvoice, 
   requestShiprocketPickup,
-  cancelShiprocketOrder 
+  cancelShiprocketOrder,
+  getShiprocketOrderDetails,
+  trackShiprocketShipment
 } from '../../../../lib/shiprocket';
 
 export async function POST(request: Request) {
@@ -151,6 +153,64 @@ export async function POST(request: Request) {
         return NextResponse.json({
           success: true,
           message: 'Order cancelled on Shiprocket and local database',
+        });
+      }
+
+      case 'sync_order': {
+        if (!currentSrOrderId && !currentShipmentId) {
+          return NextResponse.json(
+            { error: 'Shiprocket Order ID or Shipment ID required to sync.' },
+            { status: 400 }
+          );
+        }
+
+        const syncedData: any = {};
+
+        // 1. Try fetching order details via Shiprocket Order ID
+        if (currentSrOrderId) {
+          try {
+            const details = await getShiprocketOrderDetails(currentSrOrderId);
+            if (details.awbCode) syncedData.shiprocket_awb_code = details.awbCode;
+            if (details.courierName) syncedData.courier_name = details.courierName;
+            if (details.shipmentId) syncedData.shiprocket_shipment_id = details.shipmentId;
+            if (details.status) syncedData.shipment_status = details.status;
+            if (details.awbCode) syncedData.status = 'shipped';
+          } catch (err) {
+            console.warn('Sync via Order ID failed, attempting shipment tracking:', err);
+          }
+        }
+
+        // 2. If AWB not yet found, try tracking via Shipment ID
+        if (!syncedData.shiprocket_awb_code && currentShipmentId) {
+          try {
+            const trackRes = await trackShiprocketShipment({ shipmentId: currentShipmentId });
+            if (trackRes.awbCode) syncedData.shiprocket_awb_code = trackRes.awbCode;
+            if (trackRes.courierName) syncedData.courier_name = trackRes.courierName;
+            if (trackRes.currentStatus) syncedData.shipment_status = trackRes.currentStatus;
+            if (trackRes.awbCode) syncedData.status = 'shipped';
+          } catch (err) {
+            console.warn('Tracking by shipment ID fallback failed:', err);
+          }
+        }
+
+        if (Object.keys(syncedData).length > 0) {
+          await supabaseAdmin
+            .from('orders')
+            .update(syncedData)
+            .eq('id', orderId);
+
+          return NextResponse.json({
+            success: true,
+            message: `Synced with Shiprocket: AWB ${syncedData.shiprocket_awb_code || 'Pending'} (${syncedData.courier_name || 'Assigned'})`,
+            awbCode: syncedData.shiprocket_awb_code,
+            courierName: syncedData.courier_name,
+            shipmentStatus: syncedData.shipment_status,
+          });
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: 'Order checked with Shiprocket (No AWB assigned yet)',
         });
       }
 

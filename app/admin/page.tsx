@@ -662,6 +662,17 @@ export default function AdminDashboard() {
           shipment_status: 'awb_assigned',
         } : o));
         showToast(data.message || 'AWB & Courier Assigned successfully!', 'success');
+      } else if (action === 'sync_order') {
+        if (data.awbCode || data.courierName) {
+          setOrders(prev => prev.map(o => o.id === order.id ? {
+            ...o,
+            shiprocket_awb_code: data.awbCode || o.shiprocket_awb_code,
+            courier_name: data.courierName || o.courier_name,
+            shipment_status: data.shipmentStatus || o.shipment_status,
+            status: data.awbCode ? 'shipped' : o.status,
+          } : o));
+        }
+        showToast(data.message || 'Synced with Shiprocket!', 'success');
       } else if (action === 'generate_label' && data.labelUrl) {
         window.open(data.labelUrl, '_blank');
         showToast('Shipping Label generated and opened', 'success');
@@ -715,6 +726,16 @@ export default function AdminDashboard() {
       const res = await fetch(`/api/shiprocket/track?order_id=${order.id}`);
       const data = await res.json();
       setTrackingDetails(data);
+
+      // Auto-update order in state if tracking revealed assigned AWB or Courier
+      if (data && (data.awbCode || data.courierName)) {
+        setOrders(prev => prev.map(o => o.id === order.id ? {
+          ...o,
+          shiprocket_awb_code: data.awbCode || o.shiprocket_awb_code,
+          courier_name: data.courierName || o.courier_name,
+          status: 'shipped',
+        } : o));
+      }
     } catch (err: any) {
       showToast('Failed to fetch tracking data', 'error');
     } finally {
@@ -1451,12 +1472,24 @@ export default function AdminDashboard() {
                                             {actionLoading[order.id] === 'push' ? 'Pushing...' : 'Push to Shiprocket'}
                                           </button>
                                         ) : (
-                                          <button
-                                            onClick={() => handleOpenTrackingModal(order)}
-                                            className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all flex items-center gap-1.5"
-                                          >
-                                            Live Track
-                                          </button>
+                                          <div className="flex items-center gap-2">
+                                            <button
+                                              onClick={() => handleShiprocketAdminAction('sync_order', order)}
+                                              disabled={actionLoading[order.id] === 'sync_order'}
+                                              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 border border-zinc-700 active:scale-95"
+                                              title="Sync latest AWB and Courier from Shiprocket"
+                                            >
+                                              <RefreshCw size={11} className={actionLoading[order.id] === 'sync_order' ? 'animate-spin' : ''} />
+                                              {actionLoading[order.id] === 'sync_order' ? 'Syncing...' : 'Sync'}
+                                            </button>
+
+                                            <button
+                                              onClick={() => handleOpenTrackingModal(order)}
+                                              className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all flex items-center gap-1.5"
+                                            >
+                                              Live Track
+                                            </button>
+                                          </div>
                                         )}
                                       </div>
                                     </div>
@@ -1484,13 +1517,34 @@ export default function AdminDashboard() {
 
                                         {/* Shiprocket Quick Action Controls */}
                                         <div className="flex flex-wrap items-center gap-2 pt-2">
-                                          {!order.shiprocket_awb_code && (
+                                          {!order.shiprocket_awb_code ? (
+                                            <>
+                                              <button
+                                                onClick={() => handleShiprocketAdminAction('assign_awb', order)}
+                                                disabled={!!actionLoading[order.id]}
+                                                className="bg-red-600 hover:bg-red-500 text-white text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-red-600 transition-colors shadow-sm"
+                                              >
+                                                {actionLoading[order.id] === 'assign_awb' ? 'Assigning...' : 'Assign AWB & Courier'}
+                                              </button>
+
+                                              <button
+                                                onClick={() => handleShiprocketAdminAction('sync_order', order)}
+                                                disabled={!!actionLoading[order.id]}
+                                                className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-zinc-800 transition-colors flex items-center gap-1"
+                                                title="Check if AWB was assigned directly on Shiprocket"
+                                              >
+                                                <RefreshCw size={11} className={actionLoading[order.id] === 'sync_order' ? 'animate-spin' : ''} />
+                                                Fetch AWB from Shiprocket
+                                              </button>
+                                            </>
+                                          ) : (
                                             <button
-                                              onClick={() => handleShiprocketAdminAction('assign_awb', order)}
+                                              onClick={() => handleShiprocketAdminAction('sync_order', order)}
                                               disabled={!!actionLoading[order.id]}
-                                              className="bg-zinc-900 hover:bg-zinc-800 text-white text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-zinc-800 transition-colors"
+                                              className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-zinc-800 transition-colors flex items-center gap-1"
                                             >
-                                              {actionLoading[order.id] === 'assign_awb' ? 'Assigning...' : 'Assign AWB & Courier'}
+                                              <RefreshCw size={11} className={actionLoading[order.id] === 'sync_order' ? 'animate-spin' : ''} />
+                                              Sync Status
                                             </button>
                                           )}
 

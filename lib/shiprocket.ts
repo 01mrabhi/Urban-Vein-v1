@@ -378,3 +378,44 @@ export async function trackShiprocketShipment(identifier: { shipmentId?: string;
     })),
   };
 }
+
+/**
+ * Fetch full order details from Shiprocket by Shiprocket Order ID
+ */
+export async function getShiprocketOrderDetails(shiprocketOrderId: string) {
+  const token = await getShiprocketAuthToken();
+
+  const res = await fetch(`${SHIPROCKET_BASE_URL}/orders/show/${shiprocketOrderId}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || !data.data) {
+    throw new Error(data.message || 'Failed to fetch order details from Shiprocket');
+  }
+
+  const orderData = data.data;
+  const firstShipment = Array.isArray(orderData.shipments) && orderData.shipments.length > 0
+    ? orderData.shipments[0]
+    : null;
+
+  const awbCode = orderData.awb_code || firstShipment?.awb || firstShipment?.awb_code || null;
+  const courierName = orderData.courier_name || firstShipment?.courier_name || firstShipment?.courier || null;
+  const shipmentId = orderData.shipment_id || firstShipment?.id?.toString() || null;
+  const status = orderData.status || firstShipment?.current_status || 'created';
+
+  return {
+    orderId: orderData.id?.toString(),
+    shipmentId: shipmentId?.toString(),
+    status,
+    statusCode: orderData.status_code,
+    awbCode,
+    courierName,
+    etd: firstShipment?.etd || orderData.etd || null,
+  };
+}
+

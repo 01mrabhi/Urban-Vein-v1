@@ -58,6 +58,23 @@ export async function GET(request: Request) {
       awbCode: targetAwbCode || undefined,
     });
 
+    // Auto-update database record if AWB or courier is resolved
+    if (orderId && trackingData.awbCode) {
+      try {
+        await supabaseAdmin
+          .from('orders')
+          .update({
+            shiprocket_awb_code: trackingData.awbCode,
+            courier_name: trackingData.courierName || undefined,
+            status: 'shipped',
+            shipment_status: trackingData.currentStatus || 'in_transit',
+          })
+          .eq('id', orderId);
+      } catch (dbErr) {
+        console.warn('Auto-save tracking info to DB failed:', dbErr);
+      }
+    }
+
     return NextResponse.json(trackingData);
   } catch (error: any) {
     console.error('Error tracking shipment:', error);
