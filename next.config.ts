@@ -10,8 +10,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Allow access to remote images.
+  // Allow access to remote images and disable Vercel transformation limit
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
