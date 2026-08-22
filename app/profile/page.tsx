@@ -400,7 +400,8 @@ export default function ProfilePage() {
 
                                     <div className="bg-zinc-900/30 p-4 rounded-xl border border-zinc-900 space-y-2">
                                       <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1 flex items-center gap-1">
-                                        <Truck size={12} className="text-red-500" /> Shiprocket Logistics
+                                        <Truck size={12} className="text-red-500" />
+                                        {order.courier_name?.toLowerCase().includes('india post') ? 'India Post Logistics' : 'Express Logistics'}
                                       </h4>
                                       <div>
                                         <p className="text-[9px] text-zinc-500 uppercase font-bold">Courier Partner</p>
@@ -411,14 +412,12 @@ export default function ProfilePage() {
                                         <p className="text-xs font-mono font-bold text-red-400">{order.shiprocket_awb_code || 'Assigned on Dispatch'}</p>
                                       </div>
                                       {order.shiprocket_awb_code && (
-                                        <a
-                                          href={order.tracking_url || `https://shiprocket.co/tracking/${order.shiprocket_awb_code}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
+                                        <Link
+                                          href={`/track?awb=${order.shiprocket_awb_code}`}
                                           className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-red-500 hover:text-red-400 mt-1"
                                         >
                                           Track Package Live &rarr;
-                                        </a>
+                                        </Link>
                                       )}
                                     </div>
                                   </div>

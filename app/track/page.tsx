@@ -40,8 +40,8 @@ function TrackingContent() {
       let url = `/api/shiprocket/track?`;
       if (queryVal.toLowerCase().startsWith('ord-') || queryVal.length > 20) {
         url += `order_id=${encodeURIComponent(queryVal.replace(/^ord-/i, ''))}`;
-      } else if (queryVal.match(/^\d+$/)) {
-        url += `awb=${encodeURIComponent(queryVal)}`;
+      } else if (queryVal.match(/^\d+$/) || queryVal.match(/^[A-Za-z]{2}\d{9}[A-Za-z]{2}$/i)) {
+        url += `awb=${encodeURIComponent(queryVal.toUpperCase())}`;
       } else {
         url += `order_id=${encodeURIComponent(queryVal)}`;
       }
@@ -146,8 +146,8 @@ function TrackingContent() {
         </div>
 
         <div className="flex items-center justify-between text-[9px] text-zinc-500 font-bold uppercase tracking-widest px-2">
-          <span>Example: ORD-849201 or AWB 14920491028</span>
-          <span>Powered by Shiprocket Intelligence</span>
+          <span>Example: ORD-849201, EM928174625IN, or 14920491028</span>
+          <span>Postal & Express Logistics Intelligence</span>
         </div>
       </form>
 
@@ -311,14 +311,25 @@ function TrackingContent() {
             </button>
 
             {trackingData.awbCode && (
-              <a
-                href={`https://shiprocket.co/tracking/${trackingData.awbCode}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-400 inline-flex items-center gap-1.5 transition-colors"
-              >
-                Official Shiprocket Carrier Link <ExternalLink size={12} />
-              </a>
+              trackingData.isIndiaPost || trackingData.courierName?.toLowerCase().includes('india post') ? (
+                <a
+                  href="https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-400 inline-flex items-center gap-1.5 transition-colors"
+                >
+                  Official India Post Carrier Portal <ExternalLink size={12} />
+                </a>
+              ) : (
+                <a
+                  href={`https://shiprocket.co/tracking/${trackingData.awbCode}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-400 inline-flex items-center gap-1.5 transition-colors"
+                >
+                  Official Shiprocket Carrier Link <ExternalLink size={12} />
+                </a>
+              )
             )}
           </div>
         </motion.div>

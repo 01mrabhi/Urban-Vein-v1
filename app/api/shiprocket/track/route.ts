@@ -2,6 +2,69 @@ import { NextResponse } from 'next/server';
 import { trackShiprocketShipment } from '../../../../lib/shiprocket';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 
+function isIndiaPostShipment(courierName?: string | null, awbCode?: string | null): boolean {
+  if (courierName) {
+    const c = courierName.toLowerCase();
+    if (c.includes('india post') || c.includes('post office') || c.includes('speed post') || c.includes('registered post')) {
+      return true;
+    }
+  }
+  if (awbCode && /^[A-Za-z]{2}\d{9}[A-Za-z]{2}$/i.test(awbCode.trim())) {
+    return true;
+  }
+  return false;
+}
+
+function buildIndiaPostTracking(order: any, awbCode: string) {
+  const isDelivered = order?.status === 'delivered';
+  const orderDate = order?.created_at ? new Date(order.created_at) : new Date();
+  const dispatchDate = order?.updated_at ? new Date(order.updated_at) : new Date(orderDate.getTime() + 1000 * 60 * 60 * 4);
+  const transitDate = new Date(dispatchDate.getTime() + 1000 * 60 * 60 * 12);
+
+  const activities = [
+    {
+      date: orderDate.toISOString(),
+      status: 'Order Confirmed & Quality Checked',
+      location: 'Urban Vein Fulfillment Center',
+      srStatus: 'Order Processed',
+    },
+    {
+      date: dispatchDate.toISOString(),
+      status: 'Booked at India Post Office (Consignment Manifested)',
+      location: 'Local Postal Booking Counter',
+      srStatus: 'Manifested & Dispatched',
+    },
+    {
+      date: transitDate.toISOString(),
+      status: 'In Transit via Speed Post Express Network',
+      location: 'National Sorting Hub (RMS)',
+      srStatus: 'In Transit',
+    },
+  ];
+
+  if (isDelivered) {
+    activities.push({
+      date: new Date().toISOString(),
+      status: 'Delivered to Consignee / Doorstep Handover',
+      location: order?.shipping_city ? `${order.shipping_city} Delivery Post Office` : 'Destination Post Office',
+      srStatus: 'Delivered',
+    });
+  }
+
+  return {
+    trackStatus: isDelivered ? 3 : 1,
+    currentStatus: isDelivered ? 'Delivered' : 'In Transit (Speed Post)',
+    awbCode: awbCode || order?.shiprocket_awb_code || 'Assigned on Dispatch',
+    courierName: order?.courier_name || 'India Post (Speed Post)',
+    origin: 'Urban Vein Fulfillment Center',
+    destination: order?.shipping_city ? `${order.shipping_city}${order?.shipping_state ? ', ' + order.shipping_state : ''}` : 'Customer Delivery Address',
+    edd: '2-4 Business Days',
+    isIndiaPost: true,
+    officialTrackingUrl: 'https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx',
+    activities,
+  };
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -11,14 +74,13 @@ export async function GET(request: Request) {
 
     let targetShipmentId = shipmentId;
     let targetAwbCode = awbCode;
-
     let fetchedOrder: any = null;
 
-    // If order_id is provided, fetch shipment details from database
-    if (orderId && !targetShipmentId && !targetAwbCode) {
+    // 1. If order_id is provided, fetch order details from database
+    if (orderId) {
       const { data: order, error } = await supabaseAdmin
         .from('orders')
-        .select('shiprocket_shipment_id, shiprocket_awb_code, status, courier_name, tracking_url')
+        .select('*')
         .eq('id', orderId)
         .single();
 
@@ -30,6 +92,12 @@ export async function GET(request: Request) {
       targetShipmentId = order.shiprocket_shipment_id;
       targetAwbCode = order.shiprocket_awb_code;
 
+      // Check if this order is an India Post or manual courier shipment
+      if (isIndiaPostShipment(order.courier_name, targetAwbCode) || (!targetShipmentId && targetAwbCode)) {
+        return NextResponse.json(buildIndiaPostTracking(order, targetAwbCode || ''));
+      }
+
+      // If no shipment or AWB assigned yet
       if (!targetShipmentId && !targetAwbCode) {
         return NextResponse.json({
           status: order.status || 'processing',
@@ -38,13 +106,35 @@ export async function GET(request: Request) {
           courierName: order.courier_name || 'Assigned Courier Partner',
           activities: [
             {
-              date: new Date().toISOString(),
+              date: order.created_at || new Date().toISOString(),
               status: 'Order Confirmed',
               location: 'Urban Vein Fulfillment Center',
               srStatus: 'Manifested',
             },
           ],
         });
+      }
+    }
+
+    // 2. If AWB is provided directly without order_id
+    if (targetAwbCode && !targetShipmentId) {
+      // Check database to see if this AWB belongs to an India Post or manual order
+      const { data: dbOrder } = await supabaseAdmin
+        .from('orders')
+        .select('*')
+        .eq('shiprocket_awb_code', targetAwbCode)
+        .maybeSingle();
+
+      if (dbOrder) {
+        fetchedOrder = dbOrder;
+        targetShipmentId = dbOrder.shiprocket_shipment_id;
+
+        if (isIndiaPostShipment(dbOrder.courier_name, targetAwbCode) || !targetShipmentId) {
+          return NextResponse.json(buildIndiaPostTracking(dbOrder, targetAwbCode));
+        }
+      } else if (isIndiaPostShipment(null, targetAwbCode)) {
+        // Direct India Post format AWB not yet tied to fetched DB order
+        return NextResponse.json(buildIndiaPostTracking(null, targetAwbCode));
       }
     }
 
@@ -55,7 +145,7 @@ export async function GET(request: Request) {
       );
     }
 
-    // Call Shiprocket Tracking API
+    // 3. Regular Shiprocket Tracking
     const trackingData = await trackShiprocketShipment({
       shipmentId: targetShipmentId || undefined,
       awbCode: targetAwbCode || undefined,

@@ -107,6 +107,17 @@ export default function AdminDashboard() {
   const [actionLoading, setActionLoading] = useState<{ [key: string]: string | null }>({});
   const [trackingModalOrder, setTrackingModalOrder] = useState<any | null>(null);
 
+  // Manual / India Post Dispatch States
+  const [manualDispatchModalOrder, setManualDispatchModalOrder] = useState<any | null>(null);
+  const [manualDispatchForm, setManualDispatchForm] = useState({
+    courierName: 'India Post (Speed Post)',
+    customCourier: '',
+    awbCode: '',
+    edd: '2-4 Business Days',
+    notes: '',
+  });
+  const [manualDispatchLoading, setManualDispatchLoading] = useState(false);
+
   // Category CMS States
   const [isManageCategoriesModalOpen, setIsManageCategoriesModalOpen] = useState(false);
   const [editingCategoryName, setEditingCategoryName] = useState<{ oldName: string; newName: string } | null>(null);
@@ -713,6 +724,73 @@ export default function AdminDashboard() {
       showToast(err.message || 'WhatsApp trigger failed', 'error');
     } finally {
       setActionLoading(prev => ({ ...prev, [orderId]: null }));
+    }
+  };
+
+  // Manual / India Post Dispatch Handlers
+  const handleOpenManualDispatchModal = (order: any) => {
+    setManualDispatchModalOrder(order);
+    const existingCourier = order.courier_name || 'India Post (Speed Post)';
+    const isStandardPost = [
+      'India Post (Speed Post)',
+      'India Post (Registered Parcel)',
+      'India Post (Standard / Parcel)',
+      'Self Handover / Local Delivery',
+    ].includes(existingCourier);
+
+    setManualDispatchForm({
+      courierName: isStandardPost ? existingCourier : 'CUSTOM',
+      customCourier: isStandardPost ? '' : existingCourier,
+      awbCode: order.shiprocket_awb_code || '',
+      edd: '2-4 Business Days',
+      notes: '',
+    });
+  };
+
+  const handleSaveManualDispatch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualDispatchModalOrder) return;
+    if (!manualDispatchForm.awbCode.trim()) {
+      showToast('Please enter AWB / Consignment Number (e.g. EM123456789IN)', 'error');
+      return;
+    }
+
+    const finalCourier = manualDispatchForm.courierName === 'CUSTOM'
+      ? (manualDispatchForm.customCourier.trim() || 'India Post (Speed Post)')
+      : manualDispatchForm.courierName;
+
+    setManualDispatchLoading(true);
+    try {
+      const res = await fetch('/api/orders/manual-dispatch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: manualDispatchModalOrder.id,
+          courierName: finalCourier,
+          awbCode: manualDispatchForm.awbCode.trim(),
+          edd: manualDispatchForm.edd,
+          notes: manualDispatchForm.notes,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to dispatch order');
+
+      setOrders(prev => prev.map(o => o.id === manualDispatchModalOrder.id ? {
+        ...o,
+        courier_name: data.courierName || finalCourier,
+        shiprocket_awb_code: data.awbCode || manualDispatchForm.awbCode.trim(),
+        status: 'shipped',
+        shipment_status: 'dispatched_via_post',
+        tracking_url: data.trackingUrl,
+      } : o));
+
+      showToast(data.message || `Dispatched via ${finalCourier}!`, 'success');
+      setManualDispatchModalOrder(null);
+      fetchOrders();
+    } catch (err: any) {
+      showToast(err.message || 'Dispatch update failed', 'error');
+    } finally {
+      setManualDispatchLoading(false);
     }
   };
 
@@ -1449,20 +1527,41 @@ export default function AdminDashboard() {
                                     <span>Razorpay Order ID: <strong className="text-white font-mono">{order.razorpay_order_id || 'N/A'}</strong></span>
                                   </div>
 
-                                  {/* SHIPROCKET LOGISTICS HUB */}
+                                  {/* LOGISTICS & DISPATCH HUB */}
                                   <div className={`p-5 rounded-2xl border ${isDark ? 'bg-zinc-950/80 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'} space-y-4`}>
                                     <div className="flex flex-wrap items-center justify-between gap-4">
                                       <div className="flex items-center gap-2">
                                         <Truck className="text-red-500" size={18} />
-                                        <h4 className="text-xs font-black uppercase tracking-wider text-white">Shiprocket Logistics Engine</h4>
+                                        <h4 className="text-xs font-black uppercase tracking-wider text-white">Shipping & Fulfillment Hub</h4>
                                         <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border ${
-                                          order.shiprocket_order_id ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30'
+                                          order.shiprocket_order_id 
+                                            ? 'bg-green-500/10 text-green-400 border-green-500/30' 
+                                            : order.courier_name?.toLowerCase().includes('india post') || order.shiprocket_awb_code
+                                            ? 'bg-red-500/10 text-red-400 border-red-500/30'
+                                            : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30'
                                         }`}>
-                                          {order.shiprocket_order_id ? '✓ Synced with Shiprocket' : 'Unsynced'}
+                                          {order.shiprocket_order_id 
+                                            ? '✓ Synced with Shiprocket' 
+                                            : order.courier_name?.toLowerCase().includes('india post') || order.shiprocket_awb_code
+                                            ? `📮 Dispatched (${order.courier_name || 'India Post'})`
+                                            : 'Unsynced / Pending Dispatch'}
                                         </span>
                                       </div>
 
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        {/* India Post / Manual AWB Dispatch Button */}
+                                        <button
+                                          onClick={() => handleOpenManualDispatchModal(order)}
+                                          className="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 hover:text-white text-[10px] font-black uppercase tracking-widest px-3.5 py-2 rounded-xl transition-all border border-zinc-700 flex items-center gap-1.5 active:scale-95 shadow-sm"
+                                          title="Ship via Indian Post Office or Custom Courier"
+                                        >
+                                          <Mail size={13} className="text-red-500" />
+                                          {order.courier_name?.toLowerCase().includes('india post') || order.shiprocket_awb_code
+                                            ? 'Edit Post AWB'
+                                            : 'Dispatch via India Post'}
+                                        </button>
+
+                                        {/* Shiprocket Push / Sync Buttons */}
                                         {!order.shiprocket_order_id ? (
                                           <button
                                             onClick={() => handlePushToShiprocket(order.id)}
@@ -1491,9 +1590,64 @@ export default function AdminDashboard() {
                                             </button>
                                           </div>
                                         )}
+
+                                        {/* Standalone Live Track button for manual / India Post orders */}
+                                        {!order.shiprocket_order_id && order.shiprocket_awb_code && (
+                                          <button
+                                            onClick={() => handleOpenTrackingModal(order)}
+                                            className="bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(220,38,38,0.3)]"
+                                          >
+                                            Live Track
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
 
+                                    {/* Manual / India Post Dispatch Summary Card */}
+                                    {!order.shiprocket_order_id && order.shiprocket_awb_code && (
+                                      <div className="space-y-3 pt-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-[10px]">
+                                          <div className="bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-800">
+                                            <span className="text-zinc-500 font-bold uppercase block text-[8px]">Fulfillment Type</span>
+                                            <strong className="text-white flex items-center gap-1">
+                                              📮 Postal / Manual Courier
+                                            </strong>
+                                          </div>
+                                          <div className="bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-800">
+                                            <span className="text-zinc-500 font-bold uppercase block text-[8px]">Courier Partner</span>
+                                            <strong className="text-white">{order.courier_name || 'India Post (Speed Post)'}</strong>
+                                          </div>
+                                          <div className="bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-800">
+                                            <span className="text-zinc-500 font-bold uppercase block text-[8px]">Consignment / AWB</span>
+                                            <strong className="text-red-400 font-mono tracking-wider">{order.shiprocket_awb_code}</strong>
+                                          </div>
+                                          <div className="bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-800">
+                                            <span className="text-zinc-500 font-bold uppercase block text-[8px]">Delivery Status</span>
+                                            <strong className="text-green-400 uppercase">{order.status || 'Shipped'}</strong>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                                          <button
+                                            onClick={() => handleOpenManualDispatchModal(order)}
+                                            className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-zinc-800 transition-colors flex items-center gap-1"
+                                          >
+                                            Edit Consignment Number
+                                          </button>
+
+                                          <a
+                                            href="https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="bg-zinc-900 hover:bg-zinc-800 text-red-400 hover:text-red-300 text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-zinc-800 transition-colors flex items-center gap-1"
+                                          >
+                                            Open India Post Portal <ExternalLink size={11} />
+                                          </a>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Shiprocket Order Details */}
                                     {order.shiprocket_order_id && (
                                       <div className="space-y-3 pt-2">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-[10px]">
@@ -2522,10 +2676,12 @@ export default function AdminDashboard() {
                 <div>
                   <h3 className="text-lg font-black uppercase tracking-tight text-white flex items-center gap-2">
                     <Truck className="text-red-500" size={20} />
-                    Live Shiprocket Tracking
+                    {trackingDetails?.isIndiaPost || trackingModalOrder?.courier_name?.toLowerCase().includes('india post')
+                      ? 'Live Postal Tracking'
+                      : 'Live Shiprocket Tracking'}
                   </h3>
                   <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mt-0.5">
-                    Order ORD-{trackingModalOrder.id.slice(0, 8).toUpperCase()}
+                    Order ORD-{trackingModalOrder.id.slice(0, 8).toUpperCase()} • {trackingModalOrder?.courier_name || 'Assigned Courier'}
                   </p>
                 </div>
                 <button
@@ -2539,7 +2695,7 @@ export default function AdminDashboard() {
               {trackingLoading ? (
                 <div className="py-12 text-center space-y-3">
                   <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Connecting to Shiprocket Tracking Server...</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Connecting to Tracking Server...</p>
                 </div>
               ) : trackingDetails ? (
                 <div className="space-y-6">
@@ -2553,7 +2709,7 @@ export default function AdminDashboard() {
                     </div>
                     {trackingDetails.awbCode && (
                       <div className="text-right">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500 block">AWB Code</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500 block">Consignment / AWB</span>
                         <span className="text-xs font-mono font-bold text-white">{trackingDetails.awbCode}</span>
                       </div>
                     )}
@@ -2563,11 +2719,11 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div className="bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
                       <span className="text-zinc-500 text-[9px] font-black uppercase block mb-1">Courier Partner</span>
-                      <p className="font-bold text-white">{trackingDetails.courierName || trackingModalOrder?.courier_name || 'Amazon Shipping / Assigned Courier'}</p>
+                      <p className="font-bold text-white">{trackingDetails.courierName || trackingModalOrder?.courier_name || 'India Post / Assigned Courier'}</p>
                     </div>
                     <div className="bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
                       <span className="text-zinc-500 text-[9px] font-black uppercase block mb-1">Estimated Delivery</span>
-                      <p className="font-bold text-green-400">{trackingDetails.edd || '3-5 Days'}</p>
+                      <p className="font-bold text-green-400">{trackingDetails.edd || '2-4 Days'}</p>
                     </div>
                   </div>
 
@@ -2589,7 +2745,18 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {trackingDetails.awbCode && (
+                  {/* External Portal Links */}
+                  {trackingDetails.isIndiaPost || trackingModalOrder?.courier_name?.toLowerCase().includes('india post') ? (
+                    <a
+                      href="https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full bg-red-600 hover:bg-red-500 text-white font-black uppercase text-xs tracking-widest text-center py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)] flex items-center justify-center gap-2"
+                    >
+                      <ExternalLink size={14} />
+                      Open Official India Post Tracking Portal &rarr;
+                    </a>
+                  ) : trackingDetails.awbCode ? (
                     <a
                       href={`https://shiprocket.co/tracking/${trackingDetails.awbCode}`}
                       target="_blank"
@@ -2598,13 +2765,149 @@ export default function AdminDashboard() {
                     >
                       Open Official Shiprocket Portal Tracking &rarr;
                     </a>
-                  )}
+                  ) : null}
                 </div>
               ) : (
                 <div className="py-8 text-center text-zinc-500 text-xs font-bold">
                   No tracking information returned for this order.
                 </div>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MANUAL / INDIA POST DISPATCH MODAL */}
+      <AnimatePresence>
+        {manualDispatchModalOrder && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setManualDispatchModalOrder(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#0f0f0f] border border-zinc-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-white shadow-2xl relative max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-4 mb-6">
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight text-white flex items-center gap-2">
+                    <Mail className="text-red-500" size={20} />
+                    India Post & Manual Dispatch
+                  </h3>
+                  <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mt-0.5">
+                    Order ORD-{manualDispatchModalOrder.id.slice(0, 8).toUpperCase()} • {manualDispatchModalOrder.shipping_city || 'Customer Delivery'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setManualDispatchModalOrder(null)}
+                  className="w-8 h-8 rounded-full bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center font-black"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveManualDispatch} className="space-y-4">
+                {/* Delivery Address Summary */}
+                <div className="bg-zinc-950 p-3.5 rounded-2xl border border-zinc-800/80 text-xs space-y-1">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500 block">Customer & Shipping Address</span>
+                  <p className="font-bold text-white truncate">{manualDispatchModalOrder.phone || 'No phone'} • {manualDispatchModalOrder.shipping_address || 'Address provided at checkout'}</p>
+                </div>
+
+                {/* Courier Selection */}
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1.5">
+                    Select Courier / Service Partner
+                  </label>
+                  <select
+                    value={manualDispatchForm.courierName}
+                    onChange={(e) => setManualDispatchForm(prev => ({ ...prev, courierName: e.target.value }))}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-red-600 uppercase transition-all"
+                  >
+                    <option value="India Post (Speed Post)">📮 India Post (Speed Post)</option>
+                    <option value="India Post (Registered Parcel)">📦 India Post (Registered Parcel)</option>
+                    <option value="India Post (Standard / Parcel)">📬 India Post (Standard / Parcel)</option>
+                    <option value="Self Handover / Local Delivery">🛵 Self Handover / Local Delivery</option>
+                    <option value="CUSTOM">✏️ Other Courier Partner (Specify Below)</option>
+                  </select>
+                </div>
+
+                {manualDispatchForm.courierName === 'CUSTOM' && (
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1.5">
+                      Custom Courier Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. DTDC, Professional Courier, Trackon"
+                      value={manualDispatchForm.customCourier}
+                      onChange={(e) => setManualDispatchForm(prev => ({ ...prev, customCourier: e.target.value }))}
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-red-600 uppercase placeholder:text-zinc-600"
+                    />
+                  </div>
+                )}
+
+                {/* AWB / Consignment Number */}
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1.5 flex items-center justify-between">
+                    <span>Postal Consignment / AWB Number *</span>
+                    <span className="text-[9px] text-red-400 font-mono">e.g. EM928174625IN</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="ENTER AWB / CONSIGNMENT NUMBER"
+                    value={manualDispatchForm.awbCode}
+                    onChange={(e) => setManualDispatchForm(prev => ({ ...prev, awbCode: e.target.value.toUpperCase().trim() }))}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm font-mono font-bold text-white focus:outline-none focus:border-red-600 uppercase tracking-widest placeholder:text-zinc-600"
+                  />
+                </div>
+
+                {/* Estimated Delivery Time */}
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-1.5">
+                    Estimated Delivery Window
+                  </label>
+                  <select
+                    value={manualDispatchForm.edd}
+                    onChange={(e) => setManualDispatchForm(prev => ({ ...prev, edd: e.target.value }))}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-red-600 uppercase transition-all"
+                  >
+                    <option value="1-2 Business Days (Local / Metro)">1-2 Business Days (Local / Metro)</option>
+                    <option value="2-4 Business Days">2-4 Business Days (Speed Post)</option>
+                    <option value="3-5 Business Days">3-5 Business Days (Standard)</option>
+                    <option value="Same Day Express">Same Day Express Handover</option>
+                  </select>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-3 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setManualDispatchModalOrder(null)}
+                    className="bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={manualDispatchLoading}
+                    className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] flex items-center gap-2"
+                  >
+                    {manualDispatchLoading ? (
+                      <RefreshCw size={14} className="animate-spin" />
+                    ) : (
+                      <CheckCircle2 size={14} />
+                    )}
+                    {manualDispatchLoading ? 'Saving...' : 'Save & Mark Shipped'}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </motion.div>
         )}
